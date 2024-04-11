@@ -14,9 +14,9 @@ import '../App.css';
 
 const urls = {
   1: {
-    audioUrl: '../assets/RickRoll.mp3',
+    audioUrl: '../src/assets/RickRoll.mp3',
     audioContentType: 'audio/mpeg',
-    waveformDataUrl: '../assets/RickRoll.dat'
+    waveformDataUrl: '../src/assets/RickRoll.dat'
   },
 };
 
