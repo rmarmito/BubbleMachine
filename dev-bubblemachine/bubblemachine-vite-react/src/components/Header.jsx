@@ -8,7 +8,12 @@ const Header = () => {
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
           <img src={logo} alt="Logo" style={{ marginRight: 10, height: 50 }} />
-          <Typography variant="h3" align="center" style={{ flexGrow: 1 }}>
+          <Typography
+            variant="h4"
+            pl="10px"
+            align="left"
+            style={{ flexGrow: 1 }}
+          >
             BubbleMachine Prototype
           </Typography>
         </Box>
