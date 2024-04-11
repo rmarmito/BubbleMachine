@@ -3,6 +3,7 @@ import ErrorPage from "./pages/ErrorPage";
 import Layout from "./pages/Layout";
 import WaveformVis from "./pages/WaveformVis";
 import BubbleLayer from "./pages/BubbleLayer";
+import RickRollAudio from "./assets/RickRoll.mp3";
 import "./App.css";
 import{
   BrowserRouter,
@@ -11,6 +12,7 @@ import{
 } from "react-router-dom";
 
 function App() {
+  
   return (
     <>
     <BrowserRouter>
