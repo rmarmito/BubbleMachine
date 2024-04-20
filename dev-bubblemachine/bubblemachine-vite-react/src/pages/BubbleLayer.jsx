@@ -39,11 +39,11 @@ const BubbleLayer = () => {
             p: 5,
           }}
         >
-          <Stage width = {1750} height ={500} >
+          <Stage width = {window.innerWidth} height ={window.innerHeight/2} >
             <Layer>
               <Ellipse 
                 x = {100} 
-                y = {500}
+                y = {window.innerHeight/2}
                 width = {200}
                 height = {300}
                 fill = "Blue"
@@ -51,7 +51,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {200} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {400}
                 height = {100}
                 fill = "red"
@@ -59,7 +59,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {400} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {400}
                 height = {300}
                 fill = "blue"
@@ -67,7 +67,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {600} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {500}
                 height = {500}
                 fill = "green"
@@ -75,7 +75,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {725} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {50}
                 height = {100}
                 fill = "red"
@@ -83,7 +83,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {200} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {400}
                 height = {100}
                 fill = "red"
@@ -92,7 +92,7 @@ const BubbleLayer = () => {
               {/* Second section */}
               <Ellipse 
                 x = {1000} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {400}
                 height = {300}
                 fill = "blue"
@@ -100,7 +100,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {700} 
-                y = {500}
+                y = {window.innerHeight/2}
                 width = {200}
                 height = {300}
                 fill = "blue"
@@ -108,7 +108,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {400} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {400}
                 height = {300}
                 fill = "blue"
@@ -116,7 +116,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {1500} 
-                y = {500}
+                y = {window.innerHeight/2}
                 width = {300}
                 height = {100}
                 fill = "red"
@@ -124,7 +124,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {1300} 
-                y = {500}
+                y = {window.innerHeight}
                 width = {300}
                 height = {50}
                 fill = "yellow"
@@ -132,7 +132,7 @@ const BubbleLayer = () => {
               />
               <Ellipse 
                 x = {200} 
-                y = {500}
+                y = {window.innerHeight/2}
                 width = {400}
                 height = {100}
                 fill = "red"
