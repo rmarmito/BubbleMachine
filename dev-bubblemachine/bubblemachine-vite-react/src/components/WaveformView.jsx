@@ -1,12 +1,12 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Button, ButtonToolbar } from 'react-bootstrap';
-import Peaks from 'peaks.js';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { Button, ButtonToolbar } from "react-bootstrap";
+import Peaks from "peaks.js";
 
-import { createPointMarker, createSegmentMarker } from './MarkerFactories';
-import { createSegmentLabel } from './SegmentLabelFactory';
+import { createPointMarker, createSegmentMarker } from "./MarkerFactories";
+import { createSegmentLabel } from "./SegmentLabelFactory";
 
-import './WaveformView.css';
+import "./WaveformView.css";
 
 class WaveformView extends Component {
   constructor(props) {
@@ -19,15 +19,29 @@ class WaveformView extends Component {
   }
 
   render() {
-    console.log("WaveformView.render, audioUrl:", this.props.audioUrl, 'waveformDataUrl:', this.props.waveformDataUrl);
+    console.log(
+      "WaveformView.render, audioUrl:",
+      this.props.audioUrl,
+      "waveformDataUrl:",
+      this.props.waveformDataUrl
+    );
 
     return (
       <div>
-        <div className="zoomview-container" ref={this.zoomviewWaveformRef}></div>
-        <div className="overview-container" ref={this.overviewWaveformRef}></div>
+        <div
+          className="zoomview-container"
+          ref={this.zoomviewWaveformRef}
+        ></div>
+        <div
+          className="overview-container"
+          ref={this.overviewWaveformRef}
+        ></div>
 
         <audio ref={this.audioElementRef} controls="controls">
-          <source src={this.props.audioUrl} type={this.props.audioContentType}/>
+          <source
+            src={this.props.audioUrl}
+            type={this.props.audioContentType}
+          />
           Your browser does not support the audio element.
         </audio>
 
@@ -55,14 +69,14 @@ class WaveformView extends Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    console.log('WaveformComponent.componentDidUpdate');
+    console.log("WaveformComponent.componentDidUpdate");
 
     if (this.props.audioUrl === prevProps.audioUrl) {
       return;
     }
 
-    console.log('props', this.props);
-    console.log('prevProps', prevProps);
+    console.log("props", this.props);
+    console.log("prevProps", prevProps);
 
     this.initPeaks();
   }
@@ -70,27 +84,26 @@ class WaveformView extends Component {
   initPeaks() {
     const options = {
       overview: {
-        container: this.overviewWaveformRef.current
+        container: this.overviewWaveformRef.current,
       },
       zoomview: {
-        container: this.zoomviewWaveformRef.current
+        container: this.zoomviewWaveformRef.current,
       },
       mediaElement: this.audioElementRef.current,
       keyboard: true,
       logger: console.error.bind(console),
       createSegmentMarker: createSegmentMarker,
       createSegmentLabel: createSegmentLabel,
-      createPointMarker: createPointMarker
+      createPointMarker: createPointMarker,
     };
 
     if (this.props.waveformDataUrl) {
       options.dataUri = {
-        arraybuffer: this.props.waveformDataUrl
+        arraybuffer: this.props.waveformDataUrl,
       };
-    }
-    else if (this.props.audioContext) {
+    } else if (this.props.audioContext) {
       options.webAudio = {
-        audioContext: this.props.audioContext
+        audioContext: this.props.audioContext,
       };
     }
 
@@ -108,7 +121,7 @@ class WaveformView extends Component {
   }
 
   componentWillUnmount() {
-    console.log('WaveformView.componentWillUnmount');
+    console.log("WaveformView.componentWillUnmount");
 
     if (this.peaks) {
       this.peaks.destroy();
@@ -134,8 +147,8 @@ class WaveformView extends Component {
       this.peaks.segments.add({
         startTime: time,
         endTime: time + 10,
-        labelText: 'Test Segment',
-        editable: true
+        labelText: "Test Segment",
+        editable: true,
       });
     }
   };
@@ -146,8 +159,8 @@ class WaveformView extends Component {
 
       this.peaks.points.add({
         time: time,
-        labelText: 'Test Point',
-        editable: true
+        labelText: "Test Point",
+        editable: true,
       });
     }
   };
@@ -157,21 +170,21 @@ class WaveformView extends Component {
       this.props.setSegments(this.peaks.segments.getSegments());
       this.props.setPoints(this.peaks.points.getPoints());
     }
-  }
+  };
 
   onPeaksReady = () => {
     // Do something when the Peaks instance is ready for use
     console.log("Peaks.js is ready");
-  }
+  };
 }
 
 WaveformView.propTypes = {
-  audioUrl:         PropTypes.string,
+  audioUrl: PropTypes.string,
   audioContentType: PropTypes.string,
-  waveformDataUrl:  PropTypes.string,
-  audioContext:     PropTypes.object,
-  setSegments:      PropTypes.func,
-  setPoints:        PropTypes.func
+  waveformDataUrl: PropTypes.string,
+  audioContext: PropTypes.object,
+  setSegments: PropTypes.func,
+  setPoints: PropTypes.func,
 };
 
 export default WaveformView;
