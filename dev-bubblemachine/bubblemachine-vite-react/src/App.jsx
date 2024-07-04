@@ -9,15 +9,13 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
-  
   return (
     <>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<WaveformVis />} />
-            <Route path="/Bubble" element={<BubbleLayer />} />
-            <Route path="/home" element={<HomePage />} />
+            <Route index element={<HomePage />} />
+            {/* <Route path="/Bubble" element={<BubbleLayer />} /> */}
             <Route path="*" element={<ErrorPage />} />
           </Route>
         </Routes>

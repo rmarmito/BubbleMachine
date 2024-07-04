@@ -44,7 +44,7 @@ const BubbleBox = ({ label, labelColor, title, titleColor, children }) => {
             variant="h6"
             component="span"
           >
-            {label}:
+            {label}
           </Typography>
         )}
 
