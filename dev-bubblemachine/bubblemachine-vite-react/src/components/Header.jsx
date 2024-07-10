@@ -14,7 +14,7 @@ const Header = () => {
             align="left"
             style={{ flexGrow: 1 }}
           >
-            BubbleMachine Prototype
+            BubbleMachine
           </Typography>
         </Box>
       </Toolbar>
