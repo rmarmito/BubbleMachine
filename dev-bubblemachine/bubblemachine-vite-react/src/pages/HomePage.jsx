@@ -1,8 +1,11 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
-import WaveformVisualizer from "./WaveformVis.jsx";
+import WaveformVisualizer from "./components/WaveformVisualizer.jsx";
+import WaveformPage from "./WaveformPage.jsx"; // The new page we just created
 
 export default function HomePage() {
+  const audioFile = "./assets/RickRoll.mp3";
+
   return (
     <div>
       <BubbleBox
@@ -11,7 +14,6 @@ export default function HomePage() {
         title=""
         titleColor="SECOND COLOR"
       >
-        <WaveformVisualizer />
       </BubbleBox>
 
       <BubbleBox

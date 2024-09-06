@@ -13,13 +13,11 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@mui/icons-material": "^5.15.12",
-
     "@mui/material": "^5.15.15",
     "bootstrap": "^5.3.3",
     "howler": "^2.2.4",
     "konva": "^9.3.6",
     "peaks.js": "^3.3.0",
-
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.2.0",
@@ -28,7 +26,7 @@
     "react-router-dom": "^6.22.3",
     "waveform-data": "^4.5.0",
     "wavesurfer-react": "^3.0.2",
-    "wavesurfer.js": "^7.7.10"
+    "wavesurfer.js": "^7.8.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",
