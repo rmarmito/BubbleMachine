@@ -1,8 +1,8 @@
 import React from "react";
-import WaveformVisualizer from "./components/WaveformVisualizer";
+import WaveformVisualizer from "../components/WaveformVisualizer";
 
 const WaveformPage = () => {
-  const audioFile = "/path/to/your/audiofile.mp3"; // Replace with your actual audio file path
+  const audioFile = "./assets/RickRoll.mp3";
 
   return (
     <div>
