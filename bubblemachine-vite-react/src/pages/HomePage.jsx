@@ -1,6 +1,6 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
-import WaveformVisualizer from "../components/WaveformVisualizer"; // Correct import path
+import WaveformVis from "../components/WaveformVis";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
@@ -13,7 +13,7 @@ export default function HomePage() {
         title=""
         titleColor="#00FF00" // Use a valid color
       >
-        <WaveformVisualizer audioFile={audioFile} />
+        <WaveformVis />
       </BubbleBox>
 
       <BubbleBox
