@@ -1,5 +1,6 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
+import NewBubble from "../components/NewBubble";
 // import WaveformVisualizer from "./components/WaveformVisualizer";
 // import WaveformPage from "./WaveformPage.jsx";
 
@@ -23,7 +24,7 @@ export default function HomePage() {
       >
         Bubble Layer will go here
       </BubbleBox>
-
+      <NewBubble />
       <BubbleBox />
     </div>
   );
