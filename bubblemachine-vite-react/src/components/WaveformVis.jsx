@@ -11,6 +11,7 @@ const WaveformVis = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioFileUrl, setAudioFileUrl] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(50); // Initial zoom level
+  const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -36,8 +37,9 @@ const WaveformVis = () => {
       height: 128,
       normalize: true,
       partialRender: true,
-      pixelRatio: 1, // Important for consistent zoom behavior
-      minPxPerSec: 50, // Base zoom level; adjust as needed
+      pixelRatio: 1,
+      minPxPerSec: 50,
+      scrollParent: true, // Enable horizontal scrolling
       plugins: [
         RegionsPlugin.create({
           dragSelection: true,
@@ -48,7 +50,13 @@ const WaveformVis = () => {
       ],
     });
 
-    // Cleanup function to destroy the wavesurfer instance when component unmounts
+    // Set WaveSurfer ready state and initial zoom when ready
+    wavesurfer.current.on("ready", () => {
+      setIsWaveSurferReady(true);
+      wavesurfer.current.zoom(zoomLevel);
+    });
+
+    // Cleanup function to destroy the WaveSurfer instance when the component unmounts
     return () => {
       if (wavesurfer.current) {
         wavesurfer.current.destroy();
@@ -63,9 +71,47 @@ const WaveformVis = () => {
     }
   }, [audioFile]);
 
-  //  event listeners for play/pause and region creation
+  // Update zoom when zoomLevel changes
   useEffect(() => {
-    if (wavesurfer.current) {
+    if (wavesurfer.current && isWaveSurferReady) {
+      wavesurfer.current.zoom(zoomLevel);
+    }
+  }, [zoomLevel, isWaveSurferReady]);
+
+  // Add event listeners for play/pause, region creation, and mouse wheel zoom/panning
+  useEffect(() => {
+    if (wavesurfer.current && isWaveSurferReady) {
+      const waveformContainer = waveformRef.current;
+
+      const handleWheel = (e) => {
+        e.preventDefault(); // Prevent default scrolling
+
+        const deltaX = e.deltaX;
+        const deltaY = e.deltaY;
+
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+
+        if (absDeltaX > absDeltaY) {
+          // Gesture is primarily horizontal - Pan
+          const wrapper = wavesurfer.current.drawer.wrapper;
+          if (wrapper) {
+            wrapper.scrollLeft += deltaX * 0.5; // Adjust panning sensitivity if needed
+          }
+        } else {
+          // Gesture is primarily vertical - Zoom
+          const zoomChange = -deltaY * 0.01; // Adjust multiplier for sensitivity
+          setZoomLevel((prevZoomLevel) => {
+            let newZoomLevel = prevZoomLevel + zoomChange;
+            if (newZoomLevel < 1) newZoomLevel = 1; // Minimum zoom level
+            if (newZoomLevel > 500) newZoomLevel = 500; // Maximum zoom level
+            return newZoomLevel;
+          });
+        }
+      };
+
+      waveformContainer.addEventListener("wheel", handleWheel);
+
       // Update play/pause state
       wavesurfer.current.on("play", () => {
         setIsPlaying(true);
@@ -77,15 +123,15 @@ const WaveformVis = () => {
       // Handle region creation
       wavesurfer.current.on("region-created", (region) => {
         console.log("Region created:", region);
-        // Additional logic for regions can be added here
       });
 
       // Cleanup event listeners on unmount
       return () => {
         wavesurfer.current.unAll();
+        waveformContainer.removeEventListener("wheel", handleWheel);
       };
     }
-  }, []);
+  }, [isWaveSurferReady]);
 
   // Cleanup audio file URL when component unmounts
   useEffect(() => {
@@ -107,24 +153,21 @@ const WaveformVis = () => {
     <div style={{ padding: "20px" }}>
       <input type="file" accept="audio/*" onChange={handleFileChange} />
 
-      {/* Zoom Slider */}
-      <div style={{ margin: "20px 0" }}>
+      {/* Zoom Slider (Optional) */}
+      {/* <div style={{ margin: "20px 0" }}>
         <label htmlFor="zoomSlider">Zoom: </label>
         <input
           id="zoomSlider"
           type="range"
-          min="0"
-          max="200"
+          min="1"
+          max="500"
           value={zoomLevel}
           onChange={(e) => {
             const newZoomLevel = Number(e.target.value);
             setZoomLevel(newZoomLevel);
-            if (wavesurfer.current) {
-              wavesurfer.current.zoom(newZoomLevel);
-            }
           }}
         />
-      </div>
+      </div> */}
 
       <div id="waveform" ref={waveformRef} />
       <div id="timeline" ref={timelineRef} />
