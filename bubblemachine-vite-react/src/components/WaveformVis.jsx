@@ -1,4 +1,3 @@
-// src/pages/WaveformVis.jsx
 import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
@@ -11,6 +10,7 @@ const WaveformVis = () => {
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioFileUrl, setAudioFileUrl] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(50); // Initial zoom level
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -36,6 +36,8 @@ const WaveformVis = () => {
       height: 128,
       normalize: true,
       partialRender: true,
+      pixelRatio: 1, // Important for consistent zoom behavior
+      minPxPerSec: 50, // Base zoom level; adjust as needed
       plugins: [
         RegionsPlugin.create({
           dragSelection: true,
@@ -61,7 +63,7 @@ const WaveformVis = () => {
     }
   }, [audioFile]);
 
-  // Add event listeners for play/pause and region creation
+  //  event listeners for play/pause and region creation
   useEffect(() => {
     if (wavesurfer.current) {
       // Update play/pause state
@@ -104,6 +106,26 @@ const WaveformVis = () => {
   return (
     <div style={{ padding: "20px" }}>
       <input type="file" accept="audio/*" onChange={handleFileChange} />
+
+      {/* Zoom Slider */}
+      <div style={{ margin: "20px 0" }}>
+        <label htmlFor="zoomSlider">Zoom: </label>
+        <input
+          id="zoomSlider"
+          type="range"
+          min="0"
+          max="200"
+          value={zoomLevel}
+          onChange={(e) => {
+            const newZoomLevel = Number(e.target.value);
+            setZoomLevel(newZoomLevel);
+            if (wavesurfer.current) {
+              wavesurfer.current.zoom(newZoomLevel);
+            }
+          }}
+        />
+      </div>
+
       <div id="waveform" ref={waveformRef} />
       <div id="timeline" ref={timelineRef} />
       <button onClick={handlePlayPause}>{isPlaying ? "Pause" : "Play"}</button>
