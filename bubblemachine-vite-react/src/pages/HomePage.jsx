@@ -1,7 +1,7 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
 import NewBubble from "../components/NewBubble";
-import Example from "../components/TableEX";
+import TableWithProviders from "../components/BubbleTable";
 // import WaveformVisualizer from "./components/WaveformVisualizer";
 // import WaveformPage from "./WaveformPage.jsx";
 
@@ -25,9 +25,9 @@ export default function HomePage() {
       >
         Bubble Layer will go here
       </BubbleBox>
-        <Example />
-      <NewBubble />
-      <BubbleBox />
+      <BubbleBox>
+        <TableWithProviders enableStickyFooter enableStickyHeader/>
+      </BubbleBox >
     </div>
   );
 }
