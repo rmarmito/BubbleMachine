@@ -151,7 +151,7 @@ const WaveformVis = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <input type="file" accept="audio/*" onChange={handleFileChange} />
+      
 
       {/* Zoom Slider (Optional) */}
       {/* <div style={{ margin: "20px 0" }}>
@@ -172,6 +172,7 @@ const WaveformVis = () => {
       <div id="waveform" ref={waveformRef} />
       <div id="timeline" ref={timelineRef} />
       <button onClick={handlePlayPause}>{isPlaying ? "Pause" : "Play"}</button>
+      <input type="file" accept="audio/*" onChange={handleFileChange} />
     </div>
   );
 };

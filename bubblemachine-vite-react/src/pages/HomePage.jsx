@@ -1,7 +1,7 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
 import WaveformVis from "../components/WaveformVis";
-
+import TableWithProviders from "../components/BubbleTable";
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
 
@@ -17,15 +17,13 @@ export default function HomePage() {
       </BubbleBox>
 
       <BubbleBox
-        label="New Bubble"
+        label="Bubbles"
         labelColor="white"
         title=""
         titleColor="#FF0000" // Use a valid color
       >
-        Bubble Layer will go here
+        <TableWithProviders />
       </BubbleBox>
-
-      <BubbleBox />
     </div>
   );
 }
