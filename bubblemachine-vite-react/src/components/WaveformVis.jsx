@@ -40,6 +40,8 @@ const WaveformVis = () => {
       pixelRatio: 1,
       minPxPerSec: 50,
       scrollParent: true, // Enable horizontal scrolling
+      autoScroll: false, // Disable auto-scrolling during playback
+      autoCenter: false, // Disable auto-centering when zooming or seeking
       plugins: [
         RegionsPlugin.create({
           dragSelection: true,
