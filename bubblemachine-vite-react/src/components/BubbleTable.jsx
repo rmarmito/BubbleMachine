@@ -189,6 +189,7 @@ function useCreateBubble() {
             return Promise.resolve();
         },
         onMutate: (newBubbleInfo) => {
+            console.log('newBubbleInfo', newBubbleInfo);
             queryClient.setQueryData(
                 ['bubbles'],
                 (prevBubbles) => {
@@ -254,9 +255,9 @@ const queryClient = new QueryClient();
 const TableWithProviders = () => (
     //Put this with your other react-query providers near root of your app
     <QueryClientProvider client={queryClient}>
-      <BubbleTable />
+        <BubbleTable />
     </QueryClientProvider>
-  );
+);
 
 export default TableWithProviders;
 
@@ -265,7 +266,7 @@ const validateTime = (value) =>
     String(value).length > 0 &&
     value.match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
 
- 
+
 function validateBubble(bubble) {
     return {
         bubbleName: !validateRequired(bubble.firstName)
