@@ -14,6 +14,9 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+const Data = [{ id: '1', bubbleName: 'Bubble 1', startTime: '00:00', stopTime: '01:00', color: 'Red' },
+]
+
 const BubbleTable = () => {
     const [validationErrors, setValidationErrors] = useState();
 
@@ -125,7 +128,7 @@ const BubbleTable = () => {
 
     const table = useMaterialReactTable({
         columns,
-        data: [],
+        data: fetchedBubbles,
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
@@ -190,11 +193,12 @@ function useCreateBubble() {
         },
         onMutate: (newBubbleInfo) => {
             console.log('newBubbleInfo', newBubbleInfo);
+            
             queryClient.setQueryData(
                 ['bubbles'],
                 (prevBubbles) => {
-                const bubbles = prevBubbles || [];
-                    return  [
+                    const bubbles = prevBubbles || [];
+                    return [
                         ...bubbles,
                         {
                             ...newBubbleInfo,
@@ -212,7 +216,7 @@ function useGetBubbles() {
         queryKey: ['bubbles'],
         queryFn: async () => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            return Promise.resolve(fakeData);
+            return Promise.resolve(Data);
         },
         refetchOnWindowFocus: false,
     });
@@ -263,13 +267,16 @@ export default TableWithProviders;
 
 const validateRequired = (value) => String(value).length > 0;
 const validateTime = (value) => 
+    value !== undefined && 
+    value !== null && 
     String(value).length > 0 &&
-    value.match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
+    String(value).match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
+
 
 
 function validateBubble(bubble) {
     return {
-        bubbleName: !validateRequired(bubble.firstName)
+        bubbleName: !validateRequired(bubble.bubbleName)
             ? 'Bubble name is Required'
             : '',
         startTime: !validateTime(bubble.startTime) ? 'Start Time is Required' : '',
