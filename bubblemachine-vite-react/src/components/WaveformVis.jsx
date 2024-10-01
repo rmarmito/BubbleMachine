@@ -2,16 +2,22 @@ import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline";
+import { useGesture } from "@use-gesture/react";
 
 const WaveformVis = () => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
+  const progressRef = useRef(null);
   const wavesurfer = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioFileUrl, setAudioFileUrl] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(50); // Initial zoom level
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
+  const [cursorTime, setCursorTime] = useState(null);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -25,6 +31,49 @@ const WaveformVis = () => {
       setAudioFileUrl(fileUrl);
     }
   };
+
+  // Format time in minutes:seconds:milliseconds
+  const formatTime = (time) => {
+    if (isNaN(time)) return "0:00:000";
+    const minutes = Math.floor(time / 60).toString();
+    const seconds = Math.floor(time % 60)
+      .toString()
+      .padStart(2, "0");
+    const milliseconds = Math.floor((time * 1000) % 1000)
+      .toString()
+      .padStart(3, "0");
+    return `${minutes}:${seconds}:${milliseconds}`;
+  };
+
+  // Gesture handling using react-use-gesture
+  const bind = useGesture(
+    {
+      onWheel: ({ delta: [dx, dy], event }) => {
+        event.preventDefault();
+
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        if (absDy > absDx) {
+          // Vertical scrolling - Zoom
+          const zoomChange = -dy * 0.5; // Adjust sensitivity
+          setZoomLevel((prevZoomLevel) => {
+            let newZoomLevel = prevZoomLevel + zoomChange;
+            return Math.min(Math.max(newZoomLevel, 1), 500);
+          });
+        } else {
+          // Horizontal scrolling - Pan
+          const wrapper = wavesurfer.current.drawer.wrapper;
+          if (wrapper) {
+            wrapper.scrollLeft += dx; // Adjust sensitivity as needed
+          }
+        }
+      },
+    },
+    {
+      eventOptions: { passive: false }, // Allows event.preventDefault()
+    }
+  );
 
   // Initialize WaveSurfer instance when the component mounts
   useEffect(() => {
@@ -56,6 +105,16 @@ const WaveformVis = () => {
     wavesurfer.current.on("ready", () => {
       setIsWaveSurferReady(true);
       wavesurfer.current.zoom(zoomLevel);
+      setDuration(wavesurfer.current.getDuration());
+    });
+
+    // Update current time during playback
+    wavesurfer.current.on("audioprocess", (time) => {
+      setCurrentTime(time);
+    });
+
+    wavesurfer.current.on("seek", () => {
+      setCurrentTime(wavesurfer.current.getCurrentTime());
     });
 
     // Cleanup function to destroy the WaveSurfer instance when the component unmounts
@@ -80,40 +139,40 @@ const WaveformVis = () => {
     }
   }, [zoomLevel, isWaveSurferReady]);
 
-  // Add event listeners for play/pause, region creation, and mouse wheel zoom/panning
+  // Handle mouse move over waveform to show cursor time
+  const handleMouseMove = (e) => {
+    if (!wavesurfer.current || !wavesurfer.current.drawer) return;
+
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - bbox.left;
+
+    const duration = wavesurfer.current.getDuration();
+    const width = wavesurfer.current.drawer.width;
+    const time = (x / width) * duration;
+
+    setCursorTime(time);
+    setCursorPosition({ x });
+  };
+
+  const handleMouseLeave = () => {
+    setCursorTime(null);
+  };
+
+  // Handle progress bar click for seeking
+  const handleProgressClick = (e) => {
+    if (!wavesurfer.current || !wavesurfer.current.drawer) return;
+
+    const bbox = progressRef.current.getBoundingClientRect();
+    const x = e.clientX - bbox.left;
+    const ratio = x / bbox.width;
+
+    wavesurfer.current.seekTo(ratio);
+    setCurrentTime(ratio * duration);
+  };
+
+  // Add event listeners for play/pause and region creation
   useEffect(() => {
     if (wavesurfer.current && isWaveSurferReady) {
-      const waveformContainer = waveformRef.current;
-
-      const handleWheel = (e) => {
-        e.preventDefault(); // Prevent default scrolling
-
-        const deltaX = e.deltaX;
-        const deltaY = e.deltaY;
-
-        const absDeltaX = Math.abs(deltaX);
-        const absDeltaY = Math.abs(deltaY);
-
-        if (absDeltaX > absDeltaY) {
-          // Gesture is primarily horizontal - Pan
-          const wrapper = wavesurfer.current.drawer.wrapper;
-          if (wrapper) {
-            wrapper.scrollLeft += deltaX * 0.5; // Adjust panning sensitivity if needed
-          }
-        } else {
-          // Gesture is primarily vertical - Zoom
-          const zoomChange = -deltaY * 0.01; // Adjust multiplier for sensitivity
-          setZoomLevel((prevZoomLevel) => {
-            let newZoomLevel = prevZoomLevel + zoomChange;
-            if (newZoomLevel < 1) newZoomLevel = 1; // Minimum zoom level
-            if (newZoomLevel > 500) newZoomLevel = 500; // Maximum zoom level
-            return newZoomLevel;
-          });
-        }
-      };
-
-      waveformContainer.addEventListener("wheel", handleWheel);
-
       // Update play/pause state
       wavesurfer.current.on("play", () => {
         setIsPlaying(true);
@@ -130,7 +189,6 @@ const WaveformVis = () => {
       // Cleanup event listeners on unmount
       return () => {
         wavesurfer.current.unAll();
-        waveformContainer.removeEventListener("wheel", handleWheel);
       };
     }
   }, [isWaveSurferReady]);
@@ -155,25 +213,67 @@ const WaveformVis = () => {
     <div style={{ padding: "20px" }}>
       <input type="file" accept="audio/*" onChange={handleFileChange} />
 
-      {/* Zoom Slider (Optional) */}
-      {/* <div style={{ margin: "20px 0" }}>
-        <label htmlFor="zoomSlider">Zoom: </label>
-        <input
-          id="zoomSlider"
-          type="range"
-          min="1"
-          max="500"
-          value={zoomLevel}
-          onChange={(e) => {
-            const newZoomLevel = Number(e.target.value);
-            setZoomLevel(newZoomLevel);
+      <div
+        id="waveform"
+        ref={waveformRef}
+        {...bind()}
+        style={{ touchAction: "none", position: "relative" }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Display cursor time */}
+        {cursorTime !== null && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${cursorPosition.x}px`,
+              top: "0px",
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              color: "#fff",
+              padding: "2px 4px",
+              fontSize: "12px",
+              transform: "translateX(-50%)",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+            }}
+          >
+            {formatTime(cursorTime)}
+          </div>
+        )}
+      </div>
+      <div id="timeline" ref={timelineRef} />
+
+      {/* Progress bar */}
+      <div
+        style={{
+          position: "relative",
+          height: "10px",
+          backgroundColor: "#ccc",
+          cursor: "pointer",
+          marginTop: "10px",
+        }}
+        onClick={handleProgressClick}
+        ref={progressRef}
+      >
+        <div
+          style={{
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
+            height: "100%",
+            backgroundColor: "#2196f3",
           }}
         />
-      </div> */}
+      </div>
 
-      <div id="waveform" ref={waveformRef} />
-      <div id="timeline" ref={timelineRef} />
-      <button onClick={handlePlayPause}>{isPlaying ? "Pause" : "Play"}</button>
+      {/* Display current time and duration */}
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
+        <span>
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
+      </div>
+
+      <button onClick={handlePlayPause} style={{ marginTop: "10px" }}>
+        {isPlaying ? "Pause" : "Play"}
+      </button>
     </div>
   );
 };
