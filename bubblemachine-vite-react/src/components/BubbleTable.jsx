@@ -17,7 +17,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const Data = [{ id: '1', bubbleName: 'Bubble 1', startTime: '00:00', stopTime: '01:00', color: 'Red' },
 ]
 
-const BubbleTable = () => {
+const BubbleTable = (initBubblesData) => {
     const [validationErrors, setValidationErrors] = useState();
 
     const columns = useMemo(
@@ -88,7 +88,7 @@ const BubbleTable = () => {
     const { mutateAsync: createBubble, isPending: isCreatingBubble } =
         useCreateBubble();
     const {
-        data: fetchedBubbles = [],
+        data: bubblesData,
         isError: isLoadingBubblesError,
         isFetching: isFetchingBubbles,
         isLoading: isLoadingBubbles,
@@ -128,7 +128,7 @@ const BubbleTable = () => {
 
     const table = useMaterialReactTable({
         columns,
-        data: fetchedBubbles,
+        data: initBubblesData,
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
@@ -216,7 +216,7 @@ function useGetBubbles() {
         queryKey: ['bubbles'],
         queryFn: async () => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            return Promise.resolve(Data);
+            return Promise.resolve(initBubblesData);
         },
         refetchOnWindowFocus: false,
     });

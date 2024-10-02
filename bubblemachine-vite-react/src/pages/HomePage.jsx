@@ -2,9 +2,11 @@ import React from "react";
 import BubbleBox from "../components/BubbleBox";
 import WaveformVis from "../components/WaveformVis";
 import TableWithProviders from "../components/BubbleTable";
+import WaveBubbles from "../components/WaveBubbles";
+
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
-
+  const bubblesData = [{ id: '1', bubbleName: 'Bubble 1', startTime: '00:00', stopTime: '01:00', color: 'Red' }];
   return (
     <div>
       <BubbleBox
@@ -13,7 +15,7 @@ export default function HomePage() {
         title=""
         titleColor="#00FF00" // Use a valid color
       >
-        <WaveformVis />
+        <WaveBubbles bubblesData = {bubblesData} />
       </BubbleBox>
 
       <BubbleBox

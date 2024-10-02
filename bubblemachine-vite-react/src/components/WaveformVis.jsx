@@ -3,8 +3,8 @@ import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline";
 
-const WaveformVis = () => {
-  const waveformRef = useRef(null);
+const WaveformVis = ({waveformRef, audioDuration, setAudioDuration}) => {
+//  const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const wavesurfer = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
@@ -54,6 +54,7 @@ const WaveformVis = () => {
     wavesurfer.current.on("ready", () => {
       setIsWaveSurferReady(true);
       wavesurfer.current.zoom(zoomLevel);
+      setAudioDuration(wavesurfer.current.getDuration());
     });
 
     // Cleanup function to destroy the WaveSurfer instance when the component unmounts
