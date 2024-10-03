@@ -11,7 +11,7 @@ const WaveformVis = () => {
   const wavesurfer = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [wasPlayingBeforeDrag, setWasPlayingBeforeDrag] = useState(false); // New state
+  const [wasPlayingBeforeDrag, setWasPlayingBeforeDrag] = useState(false);
   const [audioFileUrl, setAudioFileUrl] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(50); // Initial zoom level
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
@@ -19,7 +19,7 @@ const WaveformVis = () => {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // Dragging state
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -31,6 +31,9 @@ const WaveformVis = () => {
       const fileUrl = URL.createObjectURL(file);
       setAudioFile(fileUrl);
       setAudioFileUrl(fileUrl);
+
+      // Set zoom level to the most zoomed-out (1) when a new file is loaded
+      setZoomLevel(1);
     }
   };
 
@@ -51,7 +54,6 @@ const WaveformVis = () => {
   const bind = useGesture(
     {
       onWheel: ({ delta: [dx, dy], event }) => {
-        // Existing zoom and pan code
         event.preventDefault();
 
         const absDx = Math.abs(dx);
@@ -62,7 +64,7 @@ const WaveformVis = () => {
           const zoomChange = -dy * 0.5; // Adjust sensitivity
           setZoomLevel((prevZoomLevel) => {
             let newZoomLevel = prevZoomLevel + zoomChange;
-            return Math.min(Math.max(newZoomLevel, 1), 500);
+            return Math.min(Math.max(newZoomLevel, 1), 500); // Zoom bounds: 1 to 500
           });
         } else {
           // Horizontal scrolling - Pan
@@ -75,7 +77,6 @@ const WaveformVis = () => {
       onDragStart: ({ event }) => {
         event.preventDefault();
         if (wavesurfer.current && isWaveSurferReady) {
-          setWasPlayingBeforeDrag(isPlaying);
           if (isPlaying) {
             wavesurfer.current.pause();
           }
@@ -92,14 +93,15 @@ const WaveformVis = () => {
           const width = wavesurfer.current.drawer.width;
           const time = (relativeX / width) * duration;
 
-          wavesurfer.current.setCurrentTime(time);
+          // Use seekTo instead of setCurrentTime
+          wavesurfer.current.seekTo(time / duration);
           setCurrentTime(time);
         }
       },
       onDragEnd: ({ event }) => {
         event.preventDefault();
         if (wavesurfer.current && isWaveSurferReady) {
-          if (wasPlayingBeforeDrag) {
+          if (isPlaying) {
             wavesurfer.current.play();
           }
           setIsDragging(false);
@@ -119,6 +121,8 @@ const WaveformVis = () => {
     {
       onDrag: ({ down, movement: [mx], xy: [x, y], event }) => {
         event.preventDefault();
+        event.stopPropagation(); // Prevent event from bubbling up to waveform
+
         if (!wavesurfer.current || !progressRef.current) return;
 
         const bbox = progressRef.current.getBoundingClientRect();
@@ -128,21 +132,17 @@ const WaveformVis = () => {
         const ratio = posX / bbox.width;
         const newTime = ratio * duration;
 
-        wavesurfer.current.setCurrentTime(newTime);
+        // Use seekTo instead of setCurrentTime
+        wavesurfer.current.seekTo(ratio);
         setCurrentTime(newTime);
 
-        if (!down) {
-          if (isPlaying) {
-            wavesurfer.current.play();
-          }
-        } else {
-          if (isPlaying) {
-            wavesurfer.current.pause();
-          }
-        }
+        // Do not alter playback state when seeking via progress bar
+        // If you want to maintain playback state, no additional action is needed
       },
       onClick: ({ event }) => {
         event.preventDefault();
+        event.stopPropagation(); // Prevent event from bubbling up to waveform
+
         if (!wavesurfer.current || !progressRef.current) return;
 
         const bbox = progressRef.current.getBoundingClientRect();
@@ -152,12 +152,11 @@ const WaveformVis = () => {
         const ratio = posX / bbox.width;
         const newTime = ratio * duration;
 
-        wavesurfer.current.setCurrentTime(newTime);
+        // Use seekTo instead of setCurrentTime
+        wavesurfer.current.seekTo(ratio);
         setCurrentTime(newTime);
 
-        if (isPlaying) {
-          wavesurfer.current.play();
-        }
+        // Do not alter playback state when seeking via progress bar
       },
     },
     {
@@ -177,7 +176,7 @@ const WaveformVis = () => {
       normalize: true,
       partialRender: true,
       pixelRatio: 1,
-      minPxPerSec: 50,
+      minPxPerSec: 50, // Minimum pixels per second (controls zoom level)
       scrollParent: true, // Enable horizontal scrolling
       autoScroll: false, // Disable auto-scrolling during playback
       autoCenter: false, // Disable auto-centering when zooming or seeking
@@ -194,8 +193,10 @@ const WaveformVis = () => {
     // Set WaveSurfer ready state and initial zoom when ready
     wavesurfer.current.on("ready", () => {
       setIsWaveSurferReady(true);
-      wavesurfer.current.zoom(zoomLevel);
       setDuration(wavesurfer.current.getDuration());
+
+      // Apply the default zoom level (1) after the audio is loaded
+      wavesurfer.current.zoom(1);
     });
 
     // Update current time during playback
@@ -203,8 +204,18 @@ const WaveformVis = () => {
       setCurrentTime(time);
     });
 
+    // Update current time when seeking
     wavesurfer.current.on("seek", () => {
       setCurrentTime(wavesurfer.current.getCurrentTime());
+    });
+
+    // Update play/pause state
+    wavesurfer.current.on("play", () => {
+      setIsPlaying(true);
+    });
+
+    wavesurfer.current.on("pause", () => {
+      setIsPlaying(false);
     });
 
     // Cleanup function to destroy the WaveSurfer instance when the component unmounts
@@ -248,9 +259,6 @@ const WaveformVis = () => {
   const handleMouseLeave = () => {
     setCursorTime(null);
   };
-
-  // Remove the useEffect for making the timeline clickable
-  // ...
 
   // Play/pause functionality
   const handlePlayPause = () => {
@@ -310,6 +318,7 @@ const WaveformVis = () => {
             width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
             height: "100%",
             backgroundColor: "#2196f3",
+            pointerEvents: "none", // Ensure clicks pass through
           }}
         />
       </div>
