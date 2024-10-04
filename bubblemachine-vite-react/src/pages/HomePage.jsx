@@ -1,10 +1,9 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
-// import WaveformVisualizer from "./components/WaveformVisualizer";
-// import WaveformPage from "./WaveformPage.jsx";
+import WaveformVis from "../components/WaveformVis";
 
 export default function HomePage() {
-  const audioFile = "./assets/RickRoll.mp3";
+  const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
 
   return (
     <div>
@@ -12,14 +11,16 @@ export default function HomePage() {
         label="Current File:"
         labelColor="white"
         title=""
-        titleColor="SECOND COLOR"
-      ></BubbleBox>
+        titleColor="#00FF00" // Use a valid color
+      >
+        <WaveformVis />
+      </BubbleBox>
 
       <BubbleBox
         label="New Bubble"
         labelColor="white"
         title=""
-        titleColor="SECOND COLOR"
+        titleColor="#FF0000" // Use a valid color
       >
         Bubble Layer will go here
       </BubbleBox>
