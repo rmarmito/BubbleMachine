@@ -6,18 +6,14 @@ const useBubbleStore = create((set) => ({
     updateBubble: (index, updatedBubble) => set((state) => {
         const bubbles = [...state.bubbles];
         bubbles[index] = { ...bubbles[index], ...updatedBubble };
+        console.log('bubbles', bubbles);
         return { bubbles };
     }),
     deleteBubble: (index) => set((state) => {
         const bubbles = state.bubbles.filter((_, i) => i !== index);
         return { bubbles };
     }),
-    getBubble: (index) => (state) => state.bubbles[index],
-    editBubbleValues: (index, values) => set((state) => {
-        const bubbles = [...state.bubbles];
-        bubbles[index] = { ...bubbles[index], ...values };
-        return { bubbles };
-    }),
+    getBubble: (index) => (state) => state.bubbles[index]
 }));
 
 export default useBubbleStore;

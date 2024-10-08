@@ -98,8 +98,14 @@ const BubbleTable = () => {
             return;
         }
         setValidationErrors({});
+        console.log('values', values);
         const index = bubbles.findIndex((bubble) => bubble.id === values.id);
-        updateBubble(index, values);
+        if (index !== -1) {
+            updateBubble(index, values);
+            console.log('Updated bubble at index:', index);
+        } else {
+            console.error('Bubble not found:', values.id);
+        }
         table.setEditingRow(null);
     };
 
@@ -161,6 +167,41 @@ const BubbleTable = () => {
     });
 
     return <MaterialReactTable table={table} />;
+};
+
+
+const useCreateBubble = () => {
+    const addBubble = useBubbleStore((state) => state.addBubble);
+    return async (bubble) => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        addBubble({
+            ...bubble,
+            id: (Math.random() + 1).toString(36).substring(7),
+        });
+    };
+};
+
+const useGetBubbles = () => {
+    const bubbles = useBubbleStore((state) => state.bubbles);
+    return bubbles;
+};
+
+const useUpdateBubble = () => {
+    const updateBubble = useBubbleStore((state) => state.updateBubble);
+    return async (bubble) => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const index = bubbles.findIndex((b) => b.id === bubble.id);
+        updateBubble(index, bubble);
+    };
+};
+
+const useDeleteBubble = () => {
+    const deleteBubble = useBubbleStore((state) => state.deleteBubble);
+    return async (bubbleId) => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const index = bubbles.findIndex((b) => b.id === bubbleId);
+        deleteBubble(index);
+    };
 };
 
 const ZTable = () => (
