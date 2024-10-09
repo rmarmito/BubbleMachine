@@ -190,22 +190,17 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         }),
       ],
     });
-      if (wavesurfer.current) {
-        if (wavesurfer.current.drawer) {
-          setVizWidth(wavesurfer.current.drawer.wrapper.scrollWidth);
-          console.log('wavesurfer.current.drawer.wrapper.scrollWidth', wavesurfer.current.drawer.wrapper.scrollWidth);
-        } else {
-          console.error('wavesurfer.current.drawer is undefined');
-        }
-    } else {
-        console.error('wavesurfer.current or wavesurfer.current.drawer is undefined');
-    }
+
 
     // Set WaveSurfer ready state and initial zoom when ready
     wavesurfer.current.on("ready", () => {
       setIsWaveSurferReady(true);
       setDuration(wavesurfer.current.getDuration());
       setAudioDuration(wavesurfer.current.getDuration());
+      if (wavesurfer.current && waveformRef.current.clientWidth) {
+          const containerWidth = waveformRef.current.clientWidth;
+          setVizWidth(containerWidth);
+      }
       // Apply the default zoom level (1) after the audio is loaded
       wavesurfer.current.zoom(1);
     });
@@ -280,7 +275,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <input type="file" accept="audio/*" onChange={handleFileChange} />
+      
 
       <div
         id="waveform"
@@ -344,6 +339,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
       <button onClick={handlePlayPause} style={{ marginTop: "10px" }}>
         {isPlaying ? "Pause" : "Play"}
       </button>
+      <input type="file" accept="audio/*" onChange={handleFileChange} />
     </div>
   );
 };

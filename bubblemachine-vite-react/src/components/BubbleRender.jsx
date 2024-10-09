@@ -19,16 +19,18 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
                 const startTime = convertToSeconds(bubbleData.startTime);
                 const stopTime = convertToSeconds(bubbleData.stopTime);
                 const bubbleColor = colorToHex(bubbleData.color);
-                
+                console.log('vizWidth', vizWidth);
+                console.log('audioDuration', audioDuration);
                 // Compute the bubble's start position
-                const startPosition = Math.floor(startTime / audioDuration * vizWidth);
+                const startPosition = Math.floor((startTime / audioDuration * vizWidth)+19);
                 const startPositionChecked = isNaN(startPosition) ? 0 : startPosition;
                 console.log('startPosition', startPosition);
                 // Compute the bubble's width
                 const bubbleWidth = Math.floor((stopTime - startTime) / audioDuration * vizWidth);
                 const defaultBubbleWidth = 15;
                 const bubbleWidthChecked = isNaN(bubbleWidth) || bubbleWidth === 0 ? defaultBubbleWidth : bubbleWidth;
-
+                console.log('bubbleWidth', bubbleWidth);
+                console.log('Total Time', )
                 // Convert level to a pixel height
                 const bubbleHeight = bubbleData.layer * 50;
 
