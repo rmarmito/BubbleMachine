@@ -191,7 +191,7 @@ const validateTime = (value) =>
     value !== undefined && 
     value !== null && 
     String(value).length > 0 &&
-    String(value).match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
+    String(value).match(/^((0|[0-5][0-9]?)\:)?([0-5][0-9])(:([0-9][0-9][0-9]))?$/);
 
 function validateBubble(bubble) {
     return {

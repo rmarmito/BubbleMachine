@@ -19,8 +19,8 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
                 const startTime = convertToSeconds(bubbleData.startTime);
                 const stopTime = convertToSeconds(bubbleData.stopTime);
                 const bubbleColor = colorToHex(bubbleData.color);
-                console.log('vizWidth', vizWidth);
-                console.log('audioDuration', audioDuration);
+                audioDuration = Math.floor(audioDuration * 1000);
+
                 // Compute the bubble's start position
                 const startPosition = Math.floor((startTime / audioDuration * vizWidth)+19);
                 const startPositionChecked = isNaN(startPosition) ? 0 : startPosition;
@@ -29,8 +29,10 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
                 const bubbleWidth = Math.floor((stopTime - startTime) / audioDuration * vizWidth);
                 const defaultBubbleWidth = 15;
                 const bubbleWidthChecked = isNaN(bubbleWidth) || bubbleWidth === 0 ? defaultBubbleWidth : bubbleWidth;
-                console.log('bubbleWidth', bubbleWidth);
-                console.log('Total Time', )
+                console.log('startTime', startTime);
+                console.log('stopTime', stopTime);
+                console.log('audioDuration', audioDuration);
+                console.log('vizWidth', vizWidth);
                 // Convert level to a pixel height
                 const bubbleHeight = bubbleData.layer * 50;
 
@@ -62,8 +64,10 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
 
 const convertToSeconds = (time) => {
     if (!time) return 0; // Return 0 if time is undefined or null
-    const [minutes, seconds] = time.split(':').map(Number);
-    return Math.floor((minutes * 60) + seconds);
+    const [minutes, seconds, milliseconds] = time.split(':').map(Number);
+    console.log('minutes', minutes);
+    console.log('seconds', seconds);
+    return Math.floor((minutes * 60 * 1000) + (seconds * 1000) + milliseconds);
 };
 
 const colorToHex = (color) => {
