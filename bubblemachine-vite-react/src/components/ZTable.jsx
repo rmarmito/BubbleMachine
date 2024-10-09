@@ -6,6 +6,8 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { mkConfig, generateCsv, download } from 'export-to-csv';
 import useBubbleStore from '../state';
 
 const BubbleTable = () => {
@@ -79,6 +81,16 @@ const BubbleTable = () => {
         ],
         [validationErrors]
     );
+    const csvConfig = mkConfig({
+        fieldSeparator: ',',
+        decimalSeparator: '.',
+        useKeysAsHeaders: true,
+        });
+
+    const handleExportData = () => {
+        const csv = generateCsv(csvConfig)(bubbles);
+        download(csvConfig)(csv);
+        };
 
     const handleCreateBubble = async ({ values, table }) => {
         const newValidationErrors = validateBubble(values);
@@ -149,14 +161,22 @@ const BubbleTable = () => {
             </Box>
         ),
         renderTopToolbarCustomActions: ({ table }) => (
-            <Button
-                variant="contained"
-                onClick={() => {
-                    table.setCreatingRow(true);
-                }}
-            >
-                Create New Bubble
-            </Button>
+            <Box>
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        table.setCreatingRow(true);
+                    }}
+                >
+                    Create New Bubble
+                </Button>
+                <Button
+                    onClick={handleExportData}
+                    startIcon={<FileDownloadIcon />}
+                >
+                    Export All Data
+                </Button>
+            </Box>
         ),
         state: {
             isLoading: false,
