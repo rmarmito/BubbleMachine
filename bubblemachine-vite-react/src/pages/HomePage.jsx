@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import BubbleBox from "../components/BubbleBox";
 import WaveformVis from "../components/WaveformVis";
 import ZTable from "../components/ZTable";
+import BubbleRender from "../components/BubbleRender";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [vizWidth, setVizWidth] = useState(800);
 
   return (
     <div>
@@ -14,7 +17,8 @@ export default function HomePage() {
         title=""
         titleColor="#00FF00" // Use a valid color
       >
-        <WaveformVis />
+        <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
+        <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth}/>
       </BubbleBox>
 
       <BubbleBox
@@ -23,7 +27,7 @@ export default function HomePage() {
         title=""
         titleColor="#FF0000" // Use a valid color
       >
-        <ZTable/>
+        <ZTable />
       </BubbleBox>
 
       <BubbleBox />

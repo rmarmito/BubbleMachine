@@ -4,7 +4,7 @@ import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline";
 import { useGesture } from "@use-gesture/react";
 
-const WaveformVis = () => {
+const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const progressRef = useRef(null);
@@ -90,6 +90,7 @@ const WaveformVis = () => {
           const relativeX =
             x - bbox.left + wavesurfer.current.drawer.wrapper.scrollLeft;
           const duration = wavesurfer.current.getDuration();
+          
           const width = wavesurfer.current.drawer.width;
           const time = (relativeX / width) * duration;
 
@@ -189,12 +190,22 @@ const WaveformVis = () => {
         }),
       ],
     });
+      if (wavesurfer.current) {
+        if (wavesurfer.current.drawer) {
+          setVizWidth(wavesurfer.current.drawer.wrapper.scrollWidth);
+          console.log('wavesurfer.current.drawer.wrapper.scrollWidth', wavesurfer.current.drawer.wrapper.scrollWidth);
+        } else {
+          console.error('wavesurfer.current.drawer is undefined');
+        }
+    } else {
+        console.error('wavesurfer.current or wavesurfer.current.drawer is undefined');
+    }
 
     // Set WaveSurfer ready state and initial zoom when ready
     wavesurfer.current.on("ready", () => {
       setIsWaveSurferReady(true);
       setDuration(wavesurfer.current.getDuration());
-
+      setAudioDuration(wavesurfer.current.getDuration());
       // Apply the default zoom level (1) after the audio is loaded
       wavesurfer.current.zoom(1);
     });

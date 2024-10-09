@@ -13,8 +13,10 @@ const useBubbleStore = create((set) => ({
         const bubbles = state.bubbles.filter((_, i) => i !== index);
         return { bubbles };
     }),
-    getBubble: (index) => (state) => state.bubbles[index]
+    getBubble: (index) => (state) => state.bubbles[index],
+    getBubblesByLayer: (layer) => (state) => state.bubbles.filter(bubble => bubble.layer === layer)
 }));
+
 
 export default useBubbleStore;
 /*
