@@ -13,16 +13,13 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
     }, [bubbleData, audioDuration, vizWidth]);
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <div style={{ position: 'relative', width: '100%', height: '300px' }}>
             {console.log('bubbleData', bubbleData)}
             {bubbleData.map((bubbleData, index) => {
                 const startTime = convertToSeconds(bubbleData.startTime);
                 const stopTime = convertToSeconds(bubbleData.stopTime);
                 const bubbleColor = colorToHex(bubbleData.color);
-                console.log('startTime', startTime);
-                console.log('stopTime', stopTime);
-                console.log('bubbleData startTime', bubbleData.startTime);
-                console.log('bubbleData stopTime', bubbleData.stopTime);
+                
                 // Compute the bubble's start position
                 const startPosition = Math.floor(startTime / audioDuration * vizWidth);
                 const startPositionChecked = isNaN(startPosition) ? 0 : startPosition;
@@ -48,7 +45,10 @@ const BubbleRender = ({ audioDuration, vizWidth}) => {
                     height: `${bubbleHeight}px`,
                     zIndex: bubbleLevel,
                     position: 'absolute',
-                    borderRadius: 50/100,
+                    borderTopLeftRadius: '80%',
+                    borderTopRightRadius: '80%',
+                    borderBottomLeftRadius: '0',
+                    borderBottomRightRadius: '0',
                 };
                 console.log('divStyle', divStyle);
 

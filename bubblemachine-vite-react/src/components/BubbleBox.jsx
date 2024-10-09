@@ -25,6 +25,8 @@ const BubbleBox = ({ label, labelColor, title, titleColor, children }) => {
         pb: 2,
         mx: "5%",
         my: 2,
+        height: "auto",
+        position: "relative",
       }}
     >
       <Box
@@ -35,6 +37,7 @@ const BubbleBox = ({ label, labelColor, title, titleColor, children }) => {
           p: 1,
           display: "flex",
           alignItems: "center",
+          position: "relative",
         }}
       >
         {/* label and label color */}
@@ -57,7 +60,14 @@ const BubbleBox = ({ label, labelColor, title, titleColor, children }) => {
           {title}
         </Typography>
       </Box>
-      <Box sx={{ p: 2 }}>{children}</Box>
+      <Box sx={{  p: 2, 
+                  position: "relative", 
+                  height: "100%", 
+                  overflow: "visible" 
+           }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 };
