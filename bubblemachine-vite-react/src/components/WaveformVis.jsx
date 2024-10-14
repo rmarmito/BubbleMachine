@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline";
+import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js'
 import { useGesture } from "@use-gesture/react";
+import useBubbleStore from "../state";
 
 const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const waveformRef = useRef(null);
@@ -20,6 +22,10 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false); // Dragging state
+
+  const bubbles = useBubbleStore((state) => state.bubbles);
+  const addBubble = useBubbleStore((state) => state.addBubble);
+  const updateBubble = useBubbleStore((state) => state.updateBubble);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -165,6 +171,8 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
     }
   );
 
+  const regions = RegionsPlugin.create();
+
   // Initialize WaveSurfer instance when the component mounts
   useEffect(() => {
     wavesurfer.current = WaveSurfer.create({
@@ -182,15 +190,18 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
       autoScroll: false, // Disable auto-scrolling during playback
       autoCenter: false, // Disable auto-centering when zooming or seeking
       plugins: [
-        RegionsPlugin.create({
-          dragSelection: true,
-        }),
-        TimelinePlugin.create({
-          container: timelineRef.current,
+        regions,
+        TimelinePlugin.create({ container: timelineRef.current }),
+        Hover.create({
+          formatTimeCallback: ((seconds) => formatTime(seconds)),
+          lineColor: '#ff0000',
+          lineWidth: 1,
+          labelBackground: '#555',
+          labelColor: '#fff',
+          labelSize: '11px',
         }),
       ],
     });
-
 
     // Set WaveSurfer ready state and initial zoom when ready
     wavesurfer.current.on("ready", () => {
@@ -201,8 +212,23 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
           const containerWidth = waveformRef.current.clientWidth;
           setVizWidth(containerWidth);
       }
+      regions.addRegion({
+        start: 20.011,
+        end: 120.055,
+        content: 'Verse 1',
+        color: 'rgb(100, 0, 0, 0.5)',
+        drag: false,
+        resize: true,
+      })
       // Apply the default zoom level (1) after the audio is loaded
       wavesurfer.current.zoom(1);
+    });
+
+    wavesurfer.current.on("redraw", () => {
+      if (wavesurfer.current && waveformRef.current.clientWidth) {
+        const containerWidth = waveformRef.current.clientWidth;
+        setVizWidth(containerWidth);
+      }
     });
 
     // Update current time during playback
@@ -228,9 +254,29 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
     return () => {
       if (wavesurfer.current) {
         wavesurfer.current.destroy();
+        setIsWaveSurferReady(false);
       }
     };
   }, []);
+  
+  // Display all bubbles using .map function
+  /*useEffect(() => {
+    if (wavesurfer.current && isWaveSurferReady) {
+        bubbles.map((bubble) => {
+          if(wavesurfer.current) {
+          wavesurfer.current.addRegion({
+            start: bubble.startTime,
+            end: bubble.stopTime,
+            content: bubble.bubbleName,
+            color: bubble.color,
+            drag: false,
+            resize: true,
+          
+          });
+        }
+        });     
+    }
+  }, [bubbles, isWaveSurferReady]);*/
 
   // Load audio file when audioFile state changes
   useEffect(() => {
@@ -247,7 +293,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   }, [zoomLevel, isWaveSurferReady]);
 
   // Handle mouse move over waveform to show cursor time
-  const handleMouseMove = (e) => {
+/*  const handleMouseMove = (e) => {
     if (!wavesurfer.current || !wavesurfer.current.drawer) return;
 
     const bbox = e.currentTarget.getBoundingClientRect();
@@ -265,7 +311,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const handleMouseLeave = () => {
     setCursorTime(null);
   };
-
+*/
   // Play/pause functionality
   const handlePlayPause = () => {
     if (wavesurfer.current) {
@@ -282,8 +328,8 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         ref={waveformRef}
         {...bind()}
         style={{ touchAction: "none", position: "relative" }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        //onMouseMove={handleMouseMove}
+        //onMouseLeave={handleMouseLeave}
       >
         {/* Display cursor time */}
         {cursorTime !== null && (
