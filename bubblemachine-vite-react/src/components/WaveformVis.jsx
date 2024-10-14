@@ -171,7 +171,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
     }
   );
 
-  const regions = RegionsPlugin.create();
+  const regions = RegionsPlugin.create({dragSelection: true, drag: true, resize: true,});
 
   // Initialize WaveSurfer instance when the component mounts
   useEffect(() => {
