@@ -20,7 +20,7 @@ const BubbleTable = () => {
             {
                 accessorKey: 'id',
                 header: 'Id',
-                enableEditing: false,
+                enableEditing: true,
                 size: 80,
             },
             {
@@ -91,15 +91,17 @@ const BubbleTable = () => {
         table.setCreatingRow(null);
     };
 
-    const handleSaveBubble = async ({ values, table }) => {
+    const handleSaveBubble = async ({ values, table}) => {
+        console.log('values', values);
+        
         const newValidationErrors = validateBubble(values);
         if (Object.values(newValidationErrors).some((error) => error)) {
             setValidationErrors(newValidationErrors);
             return;
         }
         setValidationErrors({});
-        console.log('values', values);
-        const index = bubbles.findIndex((bubble) => bubble.id === values.id);
+
+        const index = -1//= bubbles.findIndex((bubble) => bubble.id === values.id);
         if (index !== -1) {
             updateBubble(index, values);
             console.log('Updated bubble at index:', index);
