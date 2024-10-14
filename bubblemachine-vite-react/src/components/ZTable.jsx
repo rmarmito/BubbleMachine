@@ -68,13 +68,26 @@ const BubbleTable = () => {
             {
                 accessorKey: 'color',
                 header: 'Color',
-                editVariant: 'select',
-                editSelectOptions: ["Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Brown", "Black", "White"],
-                muiEditTextFieldProps: {
-                    select: true,
+                Cell: ({ cell }) => (
+                    <input
+                        type="color"
+                        value='#ff0000'
+                        onChange={(e) => {
+                            const newColor = e.target.value;
+                            cell.row.original.color = newColor;
+                            cell.row.getTable().updateData(cell.row.index, cell.column.id, newColor);
+                        }}
+                        style={{
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                        }}
+                    />
+                ),
+/*                muiEditTextFieldProps: {
                     error: !!validationErrors?.color,
                     helperText: validationErrors?.color,
-                },
+                },*/
             },
         ],
         [validationErrors]
