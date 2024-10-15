@@ -66,11 +66,18 @@ const RegionMarkers = ({
 // Format time in minutes and seconds
 const formatTime = (time) => {
   if (isNaN(time)) return "0:00.000";
+
   const minutes = Math.floor(time / 60).toString();
   const seconds = Math.floor(time % 60)
     .toString()
     .padStart(2, "0");
-  return `${minutes}:${seconds}`;
+
+  // Extract milliseconds by taking the fractional part of the time
+  const milliseconds = Math.floor((time % 1) * 1000)
+    .toString()
+    .padStart(3, "0");
+
+  return `${minutes}:${seconds}.${milliseconds}`;
 };
 
 export default RegionMarkers;
