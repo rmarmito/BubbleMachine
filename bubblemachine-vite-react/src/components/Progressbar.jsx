@@ -1,11 +1,20 @@
 // src/components/ProgressBar.jsx
 import React from "react";
 
-const ProgressBar = ({ currentTime, duration, isPlaying, wavesurfer }) => {
+const ProgressBar = ({ currentTime, duration, wavesurfer }) => {
   const handleProgressMouseDown = (e) => {
-    if (wavesurfer.current) {
-      seekToMousePosition(e);
-    }
+    seekToMousePosition(e);
+    document.addEventListener("mousemove", handleProgressMouseMove); // Add mousemove listener
+    document.addEventListener("mouseup", handleProgressMouseUp); // Add mouseup listener
+  };
+
+  const handleProgressMouseMove = (e) => {
+    seekToMousePosition(e); // Update position while dragging
+  };
+
+  const handleProgressMouseUp = () => {
+    document.removeEventListener("mousemove", handleProgressMouseMove); // Remove mousemove listener
+    document.removeEventListener("mouseup", handleProgressMouseUp); // Remove mouseup listener
   };
 
   const seekToMousePosition = (e) => {
@@ -15,7 +24,7 @@ const ProgressBar = ({ currentTime, duration, isPlaying, wavesurfer }) => {
       const offsetX = e.clientX - rect.left;
       const ratio = offsetX / rect.width;
 
-      wavesurfer.current.seekTo(ratio);
+      wavesurfer.current.seekTo(ratio); // Seek to the new position
     }
   };
 

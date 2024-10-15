@@ -1,12 +1,12 @@
-// src/components/WaveformVis.jsx
 import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js"; // Import Zoom Plugin
+import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
-import { useGesture } from "@use-gesture/react";
+import ProgressBar from "./ProgressBar";
+import { DateTime, Duration } from "luxon"; // luxon for accurate Time
 
 const WaveformVis = () => {
   const waveformRef = useRef(null);
@@ -17,8 +17,8 @@ const WaveformVis = () => {
   const [duration, setDuration] = useState(0);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
+  const [isDragging, setIsDragging] = useState(false); // Track dragging state
 
-  // Initialize WaveSurfer instance when the component mounts
   useEffect(() => {
     if (waveformRef.current) {
       wavesurfer.current = WaveSurfer.create({
@@ -31,12 +31,17 @@ const WaveformVis = () => {
           RegionsPlugin.create({ dragSelection: false }),
           TimelinePlugin.create({ container: waveformRef.current }),
           HoverPlugin.create({
-            formatTimeCallback: (seconds) => formatTime(seconds),
+            lineColor: "#ff0000",
+            lineWidth: 2,
+            labelBackground: "#555",
+            labelColor: "#fff",
+            labelSize: "11px",
+            formatTimeCallback: (seconds) => formatTime(seconds), // Format with ms accuracy
           }),
           ZoomPlugin.create({
-            // Initialize Zoom Plugin
             scale: 0.5,
             maxZoom: 1000,
+            autoCenter: false,
           }),
         ],
       });
@@ -46,11 +51,18 @@ const WaveformVis = () => {
       });
 
       wavesurfer.current.on("audioprocess", (time) => {
-        setCurrentTime(time);
+        if (!isDragging) {
+          setCurrentTime(time); // Update current time only if not dragging
+        }
       });
 
-      wavesurfer.current.on("play", () => setIsPlaying(true));
-      wavesurfer.current.on("pause", () => setIsPlaying(false));
+      wavesurfer.current.on("play", () => {
+        setIsPlaying(true);
+      });
+
+      wavesurfer.current.on("pause", () => {
+        setIsPlaying(false);
+      });
     }
 
     return () => {
@@ -60,7 +72,6 @@ const WaveformVis = () => {
     };
   }, []);
 
-  // Load audio file when audioFile state changes
   useEffect(() => {
     if (wavesurfer.current && audioFile) {
       wavesurfer.current.load(audioFile);
@@ -75,7 +86,6 @@ const WaveformVis = () => {
     }
   };
 
-  // Mark start time
   const markStartTime = () => {
     if (wavesurfer.current) {
       const time = wavesurfer.current.getCurrentTime();
@@ -85,7 +95,6 @@ const WaveformVis = () => {
     }
   };
 
-  // Mark end time and create region
   const markEndTime = () => {
     if (wavesurfer.current && selectedStartTime !== null) {
       const time = wavesurfer.current.getCurrentTime();
@@ -95,7 +104,6 @@ const WaveformVis = () => {
     }
   };
 
-  // Create a region based on start and end times
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
 
@@ -109,7 +117,6 @@ const WaveformVis = () => {
     console.log("Created region:", { start, end });
   };
 
-  // Handle play/pause functionality
   const handlePlayPause = () => {
     if (wavesurfer.current) {
       wavesurfer.current.playPause();
@@ -117,14 +124,20 @@ const WaveformVis = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "20px", textAlign: "center" }}>
       <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
 
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
+      <ProgressBar
+        currentTime={currentTime}
+        duration={duration}
+        wavesurfer={wavesurfer}
+      />
+
+      <div style={{ marginTop: "10px" }}>
         <span>
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
-
+        <div />
         <Button variant="contained" color="primary" onClick={markStartTime}>
           Mark Start Time
         </Button>
@@ -134,12 +147,9 @@ const WaveformVis = () => {
           color="primary"
           onClick={markEndTime}
           disabled={selectedStartTime === null}
+          style={{ marginLeft: "10px" }}
         >
           Mark End Time
-        </Button>
-
-        <Button variant="contained" color="primary" onClick={handlePlayPause}>
-          {isPlaying ? "Pause" : "Play"}
         </Button>
 
         <input
@@ -149,14 +159,17 @@ const WaveformVis = () => {
           style={{ display: "none" }}
           onChange={handleFileChange}
         />
-
+        <div />
         <label htmlFor="audio-file-input">
           <Button variant="contained" color="primary" component="span">
             Upload Audio
           </Button>
         </label>
 
-        {/* Display selected start and end times */}
+        <Button variant="contained" color="primary" onClick={handlePlayPause}>
+          {isPlaying ? "Pause" : "Play"}
+        </Button>
+
         {selectedStartTime !== null && (
           <div>
             <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
@@ -170,21 +183,9 @@ const WaveformVis = () => {
   );
 };
 
-// Format time in minutes and seconds
-const formatTime = (time) => {
-  if (isNaN(time)) return "0:00.000";
-
-  const minutes = Math.floor(time / 60).toString();
-  const seconds = Math.floor(time % 60)
-    .toString()
-    .padStart(2, "0");
-
-  // Extract milliseconds by taking the fractional part of the time
-  const milliseconds = Math.floor((time % 1) * 1000)
-    .toString()
-    .padStart(3, "0");
-
-  return `${minutes}:${seconds}.${milliseconds}`;
+const formatTime = (timeInSeconds) => {
+  const duration = Duration.fromObject({ seconds: timeInSeconds });
+  return duration.toFormat("mm:ss.SSS"); // Formats as mm:ss.SSS
 };
 
 export default WaveformVis;
