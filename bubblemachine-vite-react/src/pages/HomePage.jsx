@@ -1,7 +1,7 @@
 import React from "react";
 import BubbleBox from "../components/BubbleBox";
 import WaveformVis from "../components/WaveformVis";
-import ZTable from "../components/ZTable";
+import BubbleTable from "../components/ZTable";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
@@ -23,7 +23,7 @@ export default function HomePage() {
         title=""
         titleColor="#FF0000" // Use a valid color
       >
-        <ZTable/>
+        <BubbleTable/>
       </BubbleBox>
 
       <BubbleBox />

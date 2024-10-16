@@ -169,46 +169,7 @@ const BubbleTable = () => {
     return <MaterialReactTable table={table} />;
 };
 
-
-const useCreateBubble = () => {
-    const addBubble = useBubbleStore((state) => state.addBubble);
-    return async (bubble) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        addBubble({
-            ...bubble,
-            id: (Math.random() + 1).toString(36).substring(7),
-        });
-    };
-};
-
-const useGetBubbles = () => {
-    const bubbles = useBubbleStore((state) => state.bubbles);
-    return bubbles;
-};
-
-const useUpdateBubble = () => {
-    const updateBubble = useBubbleStore((state) => state.updateBubble);
-    return async (bubble) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const index = bubbles.findIndex((b) => b.id === bubble.id);
-        updateBubble(index, bubble);
-    };
-};
-
-const useDeleteBubble = () => {
-    const deleteBubble = useBubbleStore((state) => state.deleteBubble);
-    return async (bubbleId) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const index = bubbles.findIndex((b) => b.id === bubbleId);
-        deleteBubble(index);
-    };
-};
-
-const ZTable = () => (
-    <BubbleTable />
-);
-
-export default ZTable;
+export default BubbleTable;
 
 const validateRequired = (value) => String(value).length > 0;
 const validateTime = (value) => 
