@@ -6,7 +6,8 @@ import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
 import ProgressBar from "./ProgressBar";
-import { DateTime, Duration } from "luxon"; // luxon for accurate Time
+
+import { formatTime } from "../Helpers"; // Import the formatTime helper function
 
 const WaveformVis = () => {
   const waveformRef = useRef(null);
@@ -183,9 +184,5 @@ const WaveformVis = () => {
   );
 };
 
-const formatTime = (timeInSeconds) => {
-  const duration = Duration.fromObject({ seconds: timeInSeconds });
-  return duration.toFormat("mm:ss.SSS"); // Formats as mm:ss.SSS
-};
 
 export default WaveformVis;

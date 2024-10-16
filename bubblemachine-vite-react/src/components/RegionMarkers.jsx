@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@mui/material";
+import { formatTime } from "../Helpers"; 
 
 const RegionMarkers = ({
   wavesurfer,
@@ -63,7 +64,7 @@ const RegionMarkers = ({
 };
 
 // Format time in minutes and seconds
-const formatTime = (time) => {
+/*const formatTime = (time) => {
   if (isNaN(time)) return "0:00.000";
 
   const minutes = Math.floor(time / 60).toString();
@@ -79,4 +80,4 @@ const formatTime = (time) => {
   return `${minutes}:${seconds}.${milliseconds}`;
 };
 
-export default RegionMarkers;
+export default RegionMarkers;*/
