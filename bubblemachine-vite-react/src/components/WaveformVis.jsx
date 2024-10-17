@@ -6,22 +6,23 @@ import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
 import ProgressBar from "./ProgressBar";
-
-import { formatTime } from "../Helpers"; // Import the formatTime helper function
+import { formatTime } from "../Helpers";
 
 const WaveformVis = () => {
   const waveformRef = useRef(null);
   const wavesurfer = useRef(null);
+  const regionsPluginRef = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
-  const [isDragging, setIsDragging] = useState(false); // Track dragging state
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (waveformRef.current) {
+      regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
       wavesurfer.current = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#ddd",
@@ -29,7 +30,7 @@ const WaveformVis = () => {
         cursorColor: "#2196f3",
         height: 128,
         plugins: [
-          RegionsPlugin.create({ dragSelection: false }),
+          regionsPluginRef.current,
           TimelinePlugin.create({ container: waveformRef.current }),
           HoverPlugin.create({
             lineColor: "#ff0000",
@@ -37,7 +38,7 @@ const WaveformVis = () => {
             labelBackground: "#555",
             labelColor: "#fff",
             labelSize: "11px",
-            formatTimeCallback: (seconds) => formatTime(seconds), // Format with ms accuracy
+            formatTimeCallback: (seconds) => formatTime(seconds),
           }),
           ZoomPlugin.create({
             scale: 0.5,
@@ -53,7 +54,7 @@ const WaveformVis = () => {
 
       wavesurfer.current.on("audioprocess", (time) => {
         if (!isDragging) {
-          setCurrentTime(time); // Update current time only if not dragging
+          setCurrentTime(time);
         }
       });
 
@@ -92,7 +93,7 @@ const WaveformVis = () => {
       const time = wavesurfer.current.getCurrentTime();
       console.log("Marking start time:", time);
       setSelectedStartTime(time);
-      setSelectedEndTime(null); // Reset end time
+      setSelectedEndTime(null);
     }
   };
 
@@ -108,7 +109,7 @@ const WaveformVis = () => {
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
 
-    wavesurfer.current.addRegion({
+    regionsPluginRef.current.addRegion({
       start,
       end,
       loop: true,
@@ -116,6 +117,23 @@ const WaveformVis = () => {
     });
 
     console.log("Created region:", { start, end });
+  };
+
+  const addRegion = () => {
+    if (regionsPluginRef.current) {
+      const currentTime = wavesurfer.current.getCurrentTime();
+      const regionDuration = 5; // Duration of the region
+      const endTime =
+        currentTime + regionDuration <= duration
+          ? currentTime + regionDuration
+          : duration;
+
+      regionsPluginRef.current.addRegion({
+        start: currentTime,
+        end: endTime,
+        color: "rgba(0, 123, 255, 0.5)",
+      });
+    }
   };
 
   const handlePlayPause = () => {
@@ -171,6 +189,11 @@ const WaveformVis = () => {
           {isPlaying ? "Pause" : "Play"}
         </Button>
 
+        {/* New button to add regions */}
+        <Button variant="contained" color="primary" onClick={addRegion}>
+          Add Region
+        </Button>
+
         {selectedStartTime !== null && (
           <div>
             <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
@@ -183,6 +206,5 @@ const WaveformVis = () => {
     </div>
   );
 };
-
 
 export default WaveformVis;
