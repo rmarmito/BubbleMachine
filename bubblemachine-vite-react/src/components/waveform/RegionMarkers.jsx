@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@mui/material";
-import { formatTime } from "../Helpers"; 
+import { formatTime } from "../../helpers/utils"; 
 
 const RegionMarkers = ({
   wavesurfer,

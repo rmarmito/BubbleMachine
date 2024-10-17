@@ -3,9 +3,9 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import HomePage from "./pages/HomePage";
-import WaveformVis from "./components/WaveformVis";
+import WaveformVis from "./components/waveform/WaveformVis";
 import ErrorPage from "./pages/ErrorPage";
-import "./App.css";
+import "./styles/App.css";
 
 function App() {
   return (

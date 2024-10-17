@@ -5,8 +5,8 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
-import ProgressBar from "./ProgressBar";
-import { formatTime } from "../Helpers";
+import ProgressBar from "./Progressbar";
+import { formatTime } from "../../helpers/utils";
 
 const WaveformVis = () => {
   const waveformRef = useRef(null);
@@ -166,7 +166,7 @@ const WaveformVis = () => {
           color="primary"
           onClick={markEndTime}
           disabled={selectedStartTime === null}
-          style={{ marginLeft: "10px" }}
+          style={{ marginLeft: "30px" }}
         >
           Mark End Time
         </Button>
@@ -189,7 +189,7 @@ const WaveformVis = () => {
           {isPlaying ? "Pause" : "Play"}
         </Button>
 
-        {/* New button to add regions */}
+<div />
         <Button variant="contained" color="primary" onClick={addRegion}>
           Add Region
         </Button>
