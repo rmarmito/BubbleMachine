@@ -7,9 +7,10 @@ import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
 import ProgressBar from "./ProgressBar";
 
-import { formatTime } from "../Helpers"; // Import the formatTime helper function
+import useBubbleStore from "../state";
+import { formatTime } from "../utils"; // Import the formatTime helper function
 
-const WaveformVis = () => {
+const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const waveformRef = useRef(null);
   const wavesurfer = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
@@ -19,6 +20,11 @@ const WaveformVis = () => {
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
   const [isDragging, setIsDragging] = useState(false); // Track dragging state
+  const [isReady, setIsReady] = useState(false); // Track if the waveform is ready
+
+  const bubbles = useBubbleStore((state) => state.bubbles);
+  const addBubble = useBubbleStore((state) => state.addBubble);
+  const updateBubble = useBubbleStore((state) => state.updateBubble);
 
   useEffect(() => {
     if (waveformRef.current) {
@@ -29,7 +35,7 @@ const WaveformVis = () => {
         cursorColor: "#2196f3",
         height: 128,
         plugins: [
-          RegionsPlugin.create({ dragSelection: false }),
+          RegionsPlugin.create({dragSelection: true, drag: true, resize: true, }),
           TimelinePlugin.create({ container: waveformRef.current }),
           HoverPlugin.create({
             lineColor: "#ff0000",
@@ -49,6 +55,8 @@ const WaveformVis = () => {
 
       wavesurfer.current.on("ready", () => {
         setDuration(wavesurfer.current.getDuration());
+        setIsReady(true);
+        const regions = wavesurfer.current.getRegions();
       });
 
       wavesurfer.current.on("audioprocess", (time) => {
@@ -108,13 +116,20 @@ const WaveformVis = () => {
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
 
-    wavesurfer.current.addRegion({
+    RegionsPlugin.addRegion({
       start,
       end,
       loop: true,
       color: "rgba(0,123,255,0.5)",
     });
 
+ /*   addBubble({
+      startTime: start,
+      stopTime: end,
+      color: "Red",
+      layer: 1,
+
+    })*/
     console.log("Created region:", { start, end });
   };
 
