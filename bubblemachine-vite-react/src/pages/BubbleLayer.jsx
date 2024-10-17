@@ -22,7 +22,7 @@ const BubbleLayer = () => {
 
   return (
     <div>
-      <BubbleBox
+      <PrimaryContainer
         label="Now Playing"
         labelColor="#ffc107"
         title="Darude Sandstorm"
@@ -140,7 +140,7 @@ const BubbleLayer = () => {
             </Layer>
           </Stage>
         </Box>
-      </BubbleBox>
+      </PrimaryContainer>
     </div>
   );
 };
