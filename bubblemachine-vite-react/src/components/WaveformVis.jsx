@@ -56,7 +56,14 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
       wavesurfer.current.on("ready", () => {
         setDuration(wavesurfer.current.getDuration());
         setIsReady(true);
+        setAudioDuration(wavesurfer.current.getDuration());
         const regions = wavesurfer.current.getRegions();
+      });
+
+      wavesurfer.current.on("redraw", () => {
+        if(wavesurfer.current && waveformRef.current.clientWidth){
+          setVizWidth(waveformRef.current.clientWidth);
+        }
       });
 
       wavesurfer.current.on("audioprocess", (time) => {
