@@ -1,7 +1,7 @@
 import React from "react";
-import BubbleBox from "../components/BubbleBox";
-import WaveformVis from "../components/WaveformVis";
-import BubbleTable from "../components/ZTable";
+import BubbleBox from "../components/layout/BubbleBox"
+import WaveformVis from "../components/waveform/WaveformVis";
+import BubbleTable from "../components/table/ZTable";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
