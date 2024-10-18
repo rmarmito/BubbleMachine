@@ -1,5 +1,5 @@
 import React from "react";
-import BubbleBox from "../components/layout/BubbleBox"
+import PrimaryContainer from "../components/layout/PrimaryContainer";
 import WaveformVis from "../components/waveform/WaveformVis";
 import BubbleTable from "../components/table/ZTable";
 
@@ -8,25 +8,25 @@ export default function HomePage() {
 
   return (
     <div>
-      <BubbleBox
+      <PrimaryContainer
         label="Current File:"
         labelColor="white"
         title=""
         titleColor="#00FF00" // Use a valid color
       >
         <WaveformVis />
-      </BubbleBox>
+      </PrimaryContainer>
 
-      <BubbleBox
+      <PrimaryContainer
         label="New Bubble"
         labelColor="white"
         title=""
         titleColor="#FF0000" // Use a valid color
       >
-        <BubbleTable/>
-      </BubbleBox>
+        <BubbleTable />
+      </PrimaryContainer>
 
-      <BubbleBox />
+      <PrimaryContainer />
     </div>
   );
 }
