@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import BubbleTable from "../components/ZTable";
-import BubbleRender from "../components/BubbleRender";
 import { Box } from "@mui/material";
+import BubbleRender from "../components/bubbles/BubbleRender";
 import PrimaryContainer from "../components/layout/PrimaryContainer";
 import WaveformVis from "../components/waveform/WaveformVis";
 import BubbleTable from "../components/table/ZTable";
@@ -19,10 +18,10 @@ export default function HomePage() {
         title=""
         titleColor="#00FF00" // Use a valid color
       >
-        <Box sx={{ display: "flex", justifyContent: "center", position:"relative" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", position:"relative", marginBottom:0 }}>
           <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
         </Box>
-        <WaveformVis />
+        <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth} sx={{marginTop: 0}}/>
       </PrimaryContainer>
 
       <PrimaryContainer

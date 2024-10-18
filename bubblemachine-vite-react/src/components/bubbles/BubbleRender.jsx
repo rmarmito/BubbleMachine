@@ -1,6 +1,6 @@
 import React from 'react';
-import useBubbleStore from '../state';
-import { convertToMilliseconds, colorToHex} from '../utils';
+import useBubbleStore from '../zustand/bubbleStore';
+import { convertToMilliseconds, colorToHex} from '../../helpers/utils';
 
 //import './BubbleRender.css'; // Assuming you have a CSS file for additional styling
 const BubbleRender = ({ audioDuration = 0, vizWidth = 800}) => {
