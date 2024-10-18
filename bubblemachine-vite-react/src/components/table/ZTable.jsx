@@ -24,6 +24,17 @@ const BubbleTable = () => {
                 size: 80,
             },
             {
+            accessorKey: 'layer',
+            header: 'Layer',
+            editVariant: 'select',
+            editSelectOptions: ["1", "2", "3", "4", "5", "6"],
+            muiEditTextFieldProps: {
+                select: true,
+                error: !!validationErrors?.layer,
+                helperText: validationErrors?.layer,
+            },
+            },
+            {
                 accessorKey: 'bubbleName',
                 header: 'Bubble Name',
                 muiEditTextFieldProps: {
@@ -69,16 +80,18 @@ const BubbleTable = () => {
                 accessorKey: 'color',
                 header: 'Color',
                 editVariant: 'select',
-                editSelectOptions: ["Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Brown", "Black", "White"],
+                editSelectOptions: ["Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Brown", "Gray"],
                 muiEditTextFieldProps: {
                     select: true,
                     error: !!validationErrors?.color,
                     helperText: validationErrors?.color,
                 },
             },
+            
         ],
         [validationErrors]
     );
+
 
     const handleCreateBubble = async ({ values, table }) => {
         const newValidationErrors = validateBubble(values);
@@ -176,7 +189,7 @@ const validateTime = (value) =>
     value !== undefined && 
     value !== null && 
     String(value).length > 0 &&
-    String(value).match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
+    String(value).match(/^((0|[0-5][0-9]?)\:)?([0-5][0-9])(:([0-9][0-9][0-9]))?$/);
 
 function validateBubble(bubble) {
     return {
