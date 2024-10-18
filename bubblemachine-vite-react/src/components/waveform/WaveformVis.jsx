@@ -136,13 +136,13 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
     const id = createID();
-    regionsPluginRef.current.addRegion({
+    /*regionsPluginRef.current.addRegion({
       id,
       start,
       end,
       loop: true,
       color: "rgba(0,123,255,0.5)",
-    });
+    });*/
     addBubble({id, startTime: formatTime(start), stopTime: formatTime(end), color: "Blue", layer: 1 });
     console.log("Created region:", { start, end });
   };
@@ -156,12 +156,12 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         currentTime + regionDuration <= duration
           ? currentTime + regionDuration
           : duration;
-      regionsPluginRef.current.addRegion({
+      /*regionsPluginRef.current.addRegion({
         id,
         start: currentTime,
         end: endTime,
         color: "rgba(255, 0, 0, 0.5)",
-      });
+      });*/
       addBubble({id, startTime: formatTime(currentTime), stopTime: formatTime(endTime), color: "Red", layer: 1 });
 
     }
