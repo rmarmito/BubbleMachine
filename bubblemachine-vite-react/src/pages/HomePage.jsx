@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import BubbleBox from "../components/BubbleBox";
-import WaveformVis from "../components/WaveformVis";
 import BubbleTable from "../components/ZTable";
 import BubbleRender from "../components/BubbleRender";
 import { Box } from "@mui/material";
+import PrimaryContainer from "../components/layout/PrimaryContainer";
+import WaveformVis from "../components/waveform/WaveformVis";
+import BubbleTable from "../components/table/ZTable";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
@@ -12,7 +13,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <BubbleBox
+      <PrimaryContainer
         label="Current File:"
         labelColor="white"
         title=""
@@ -21,19 +22,19 @@ export default function HomePage() {
         <Box sx={{ display: "flex", justifyContent: "center", position:"relative" }}>
           <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
         </Box>
-        <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth}/>
-      </BubbleBox>
+        <WaveformVis />
+      </PrimaryContainer>
 
-      <BubbleBox
+      <PrimaryContainer
         label="New Bubble"
         labelColor="white"
         title=""
         titleColor="#FF0000" // Use a valid color
       >
-        <BubbleTable/>
-      </BubbleBox>
+        <BubbleTable />
+      </PrimaryContainer>
 
-      <BubbleBox />
+      <PrimaryContainer />
     </div>
   );
 }

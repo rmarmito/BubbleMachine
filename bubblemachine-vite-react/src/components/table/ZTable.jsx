@@ -6,8 +6,7 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import useBubbleStore from '../state';
-import { createID } from '../utils';
+import useBubbleStore from '../zustand/bubbleStore';
 
 const BubbleTable = () => {
     const [validationErrors, setValidationErrors] = useState({});
@@ -24,17 +23,6 @@ const BubbleTable = () => {
                 enableEditing: false,
                 size: 80,
             },
-            {
-                accessorKey: 'layer',
-                header: 'Layer',
-                editVariant: 'select',
-                editSelectOptions: ["1", "2", "3", "4", "5", "6"],
-                muiEditTextFieldProps: {
-                    select: true,
-                    error: !!validationErrors?.layer,
-                    helperText: validationErrors?.layer,
-                },
-                },
             {
                 accessorKey: 'bubbleName',
                 header: 'Bubble Name',
@@ -99,7 +87,7 @@ const BubbleTable = () => {
             return;
         }
         setValidationErrors({});
-        addBubble({ ...values, id: createID() });
+        addBubble({ ...values, id: (Math.random() + 1).toString(36).substring(7) });
         table.setCreatingRow(null);
     };
 
@@ -134,7 +122,7 @@ const BubbleTable = () => {
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
-        initialState: { columnVisibility: { id: true } },
+        initialState: { columnVisibility: { id: false } },
         getRowId: (row) => row.id,
         muiToolbarAlertBannerProps: undefined,
         muiTableContainerProps: {
@@ -188,7 +176,7 @@ const validateTime = (value) =>
     value !== undefined && 
     value !== null && 
     String(value).length > 0 &&
-    String(value).match(/^((0|[0-5][0-9]?)\:)?([0-5][0-9])(:([0-9][0-9][0-9]))?$/);
+    String(value).match(/^((0|[1-9][0-9]?)\:)?([0-5][0-9])(:([0-5][0-9]))?$/);
 
 function validateBubble(bubble) {
     return {

@@ -5,45 +5,41 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
-import ProgressBar from "./ProgressBar";
+import ProgressBar from "./Progressbar";
+import { formatTime } from "../../helpers/utils";
+import CommentDisplay from "../timestamped-comments/CommentsDisplay";
 
-import useBubbleStore from "../state";
-import { formatTime } from "../utils"; // Import the formatTime helper function
-
-const WaveformVis = ({setAudioDuration, setVizWidth}) => {
+const WaveformVis = () => {
   const waveformRef = useRef(null);
-  const wavesurfer = useRef(null);
+  const timelineRef = useRef(null);
+  const [wavesurfer, setWavesurfer] = useState(null);
+  const regionsPluginRef = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
-  const [isDragging, setIsDragging] = useState(false); // Track dragging state
-  const [isReady, setIsReady] = useState(false); // Track if the waveform is ready
-
-  const bubbles = useBubbleStore((state) => state.bubbles);
-  const addBubble = useBubbleStore((state) => state.addBubble);
-  const updateBubble = useBubbleStore((state) => state.updateBubble);
 
   useEffect(() => {
-    if (waveformRef.current) {
-      wavesurfer.current = WaveSurfer.create({
+    if (waveformRef.current && timelineRef.current) {
+      regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
+      const ws = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#ddd",
         progressColor: "#2196f3",
         cursorColor: "#2196f3",
         height: 128,
         plugins: [
-          RegionsPlugin.create({dragSelection: true, drag: true, resize: true, }),
-          TimelinePlugin.create({ container: waveformRef.current }),
+          regionsPluginRef.current,
+          TimelinePlugin.create({ container: timelineRef.current }),
           HoverPlugin.create({
             lineColor: "#ff0000",
             lineWidth: 2,
             labelBackground: "#555",
             labelColor: "#fff",
             labelSize: "11px",
-            formatTimeCallback: (seconds) => formatTime(seconds), // Format with ms accuracy
+            formatTimeCallback: (seconds) => formatTime(seconds),
           }),
           ZoomPlugin.create({
             scale: 0.5,
@@ -53,46 +49,37 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         ],
       });
 
-      wavesurfer.current.on("ready", () => {
-        setDuration(wavesurfer.current.getDuration());
-        setIsReady(true);
-        setAudioDuration(wavesurfer.current.getDuration());
-        const regions = wavesurfer.current.getRegions();
+      setWavesurfer(ws);
+
+      ws.on("ready", () => {
+        setDuration(ws.getDuration());
       });
 
-      wavesurfer.current.on("redraw", () => {
-        if(wavesurfer.current && waveformRef.current.clientWidth){
-          setVizWidth(waveformRef.current.clientWidth);
-        }
+      ws.on("audioprocess", (time) => {
+        setCurrentTime(time);
       });
 
-      wavesurfer.current.on("audioprocess", (time) => {
-        if (!isDragging) {
-          setCurrentTime(time); // Update current time only if not dragging
-        }
-      });
-
-      wavesurfer.current.on("play", () => {
+      ws.on("play", () => {
         setIsPlaying(true);
       });
 
-      wavesurfer.current.on("pause", () => {
+      ws.on("pause", () => {
         setIsPlaying(false);
       });
-    }
 
-    return () => {
-      if (wavesurfer.current) {
-        wavesurfer.current.destroy();
-      }
-    };
+      return () => {
+        if (ws) {
+          ws.destroy();
+        }
+      };
+    }
   }, []);
 
   useEffect(() => {
-    if (wavesurfer.current && audioFile) {
-      wavesurfer.current.load(audioFile);
+    if (wavesurfer && audioFile) {
+      wavesurfer.load(audioFile);
     }
-  }, [audioFile]);
+  }, [audioFile, wavesurfer]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -103,17 +90,17 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   };
 
   const markStartTime = () => {
-    if (wavesurfer.current) {
-      const time = wavesurfer.current.getCurrentTime();
+    if (wavesurfer) {
+      const time = wavesurfer.getCurrentTime();
       console.log("Marking start time:", time);
       setSelectedStartTime(time);
-      setSelectedEndTime(null); // Reset end time
+      setSelectedEndTime(null);
     }
   };
 
   const markEndTime = () => {
-    if (wavesurfer.current && selectedStartTime !== null) {
-      const time = wavesurfer.current.getCurrentTime();
+    if (wavesurfer && selectedStartTime !== null) {
+      const time = wavesurfer.getCurrentTime();
       console.log("Marking end time:", time);
       setSelectedEndTime(time);
       createRegion(selectedStartTime, time);
@@ -123,32 +110,46 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
 
-    RegionsPlugin.addRegion({
+    regionsPluginRef.current.addRegion({
       start,
       end,
       loop: true,
       color: "rgba(0,123,255,0.5)",
     });
 
- /*   addBubble({
-      startTime: start,
-      stopTime: end,
-      color: "Red",
-      layer: 1,
-
-    })*/
     console.log("Created region:", { start, end });
   };
 
+  const addRegion = () => {
+    if (regionsPluginRef.current && wavesurfer) {
+      const currentTime = wavesurfer.getCurrentTime();
+      const regionDuration = 5; // Duration of the region
+      const endTime =
+        currentTime + regionDuration <= duration
+          ? currentTime + regionDuration
+          : duration;
+      regionsPluginRef.current.addRegion({
+        start: currentTime,
+        end: endTime,
+        color: "rgba(255, 0, 0, 0.5)",
+      });
+    }
+  };
+
   const handlePlayPause = () => {
-    if (wavesurfer.current) {
-      wavesurfer.current.playPause();
+    if (wavesurfer) {
+      wavesurfer.playPause();
     }
   };
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
-      <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
+      <div
+        style={{ position: "relative", display: "inline-block", width: "100%" }}
+      >
+        <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
+        <div id="timeline" ref={timelineRef} />
+      </div>
 
       <ProgressBar
         currentTime={currentTime}
@@ -156,6 +157,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         wavesurfer={wavesurfer}
       />
 
+      <CommentDisplay wavesurfer={wavesurfer} currentTime={currentTime} />
       <div style={{ marginTop: "10px" }}>
         <span>
           {formatTime(currentTime)} / {formatTime(duration)}
@@ -193,6 +195,10 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
           {isPlaying ? "Pause" : "Play"}
         </Button>
 
+        <Button variant="contained" color="primary" onClick={addRegion}>
+          Add Region
+        </Button>
+
         {selectedStartTime !== null && (
           <div>
             <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
@@ -205,6 +211,5 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
     </div>
   );
 };
-
 
 export default WaveformVis;
