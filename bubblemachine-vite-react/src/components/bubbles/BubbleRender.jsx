@@ -7,7 +7,8 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800}) => {
     const bubbleData = useBubbleStore((state) => state.bubbles);
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '300px' }}>
+        // original height: 300px
+        <div style={{ position: 'relative', width: '100%', height: '200px' }}> 
             {console.log('bubbleData', bubbleData)}
             {bubbleData.map((bubbleData, index) => {
                 const startTime = convertToMilliseconds(bubbleData.startTime);
