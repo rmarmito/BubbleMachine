@@ -7,6 +7,7 @@ import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import useBubbleStore from '../zustand/bubbleStore';
+import { createID } from '../../helpers/utils';
 
 const BubbleTable = () => {
     const [validationErrors, setValidationErrors] = useState({});
@@ -99,8 +100,10 @@ const BubbleTable = () => {
             setValidationErrors(newValidationErrors);
             return;
         }
+        values.id = createID();
+        console.log('values', values);
         setValidationErrors({});
-        addBubble({ ...values, id: (Math.random() + 1).toString(36).substring(7) });
+        addBubble({ ...values });
         table.setCreatingRow(null);
     };
 
@@ -111,8 +114,9 @@ const BubbleTable = () => {
             return;
         }
         setValidationErrors({});
-        console.log('values', values);
+        //console.log('Found value ID: ', values.id);      
         const index = bubbles.findIndex((bubble) => bubble.id === values.id);
+        //console.log('Found bubble index: ', bubbles[index]);
         if (index !== -1) {
             updateBubble(index, values);
             console.log('Updated bubble at index:', index);
@@ -135,7 +139,8 @@ const BubbleTable = () => {
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
-        initialState: { columnVisibility: { id: false } },
+        positionActionsColumn: 'last',
+        initialState: { columnVisibility: { id: true } },
         getRowId: (row) => row.id,
         muiToolbarAlertBannerProps: undefined,
         muiTableContainerProps: {
