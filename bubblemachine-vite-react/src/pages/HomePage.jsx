@@ -4,6 +4,7 @@ import BubbleRender from "../components/bubbles/BubbleRender";
 import PrimaryContainer from "../components/layout/PrimaryContainer";
 import WaveformVis from "../components/waveform/WaveformVis";
 import BubbleTable from "../components/table/ZTable";
+import LayerTable from "../components/table/LayerTable";
 
 export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
@@ -32,8 +33,14 @@ export default function HomePage() {
       >
         <BubbleTable />
       </PrimaryContainer>
-
-      <PrimaryContainer />
+      <PrimaryContainer
+        label="New Bubble"
+        labelColor="white"
+        title=""
+        titleColor="#FF0000" // Use a valid color
+      >
+        <LayerTable layer={'1'} />
+      </PrimaryContainer>
     </div>
   );
 }
