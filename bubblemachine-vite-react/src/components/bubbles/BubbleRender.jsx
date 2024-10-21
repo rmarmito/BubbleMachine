@@ -22,7 +22,6 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800}) => {
 
                 // Compute the bubble's width
                 const bubbleWidth = Math.floor((stopTime - startTime) / audioLength * vizWidth);
-                console.log('bubbleWidth', bubbleWidth, 'start', startTime, 'stop', stopTime, 'audio', audioLength, 'viz', vizWidth);
                 const defaultBubbleWidth = 15;
                 const bubbleWidthChecked = isNaN(bubbleWidth) || bubbleWidth === 0 ? defaultBubbleWidth : bubbleWidth;
 
@@ -47,7 +46,7 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800}) => {
                     borderBottomLeftRadius: '0',
                     borderBottomRightRadius: '0',
                 };
-                console.log('divStyle', divStyle);
+
                 return <div key={index} style={divStyle}></div>;
             })}
         </div>

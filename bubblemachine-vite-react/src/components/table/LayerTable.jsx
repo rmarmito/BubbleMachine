@@ -9,24 +9,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import useBubbleStore from '../zustand/bubbleStore';
 import { createID } from '../../helpers/utils';
 
-const LayerTable = (layer) => {
+const LayerTable = ({layer}) => {
     const [validationErrors, setValidationErrors] = useState({});
-    const getBubblesByLayer = useBubbleStore((state) => state.getBubblesByLayer);
-    const bubbles = useMemo(() => getBubblesByLayer( layer ), [getBubblesByLayer, layer]);
-    console.log('bubbles layer', bubbles);
+    const bubbles = useBubbleStore((state) => state.bubbles);
     const addBubble = useBubbleStore((state) => state.addBubble);
     const updateBubble = useBubbleStore((state) => state.updateBubble);
     const deleteBubble = useBubbleStore((state) => state.deleteBubble);
-
-    useEffect(() => {
-        const likeAndSubscribe = useBubbleStore.subscribe(
-            (state) => state.bubbles,
-            () => {
-                bubbles = getBubblesByLayer({ layer });
-            }
-        );
-        return () => likeAndSubscribe();
-    }, [getBubblesByLayer, layer]);
 
     const columns = useMemo(
         () => [
@@ -145,7 +133,7 @@ const LayerTable = (layer) => {
 
     const table = useMaterialReactTable({
         columns,
-        data: bubbles,
+        data: bubbles.filter(bubble => bubble.layer === layer),
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
@@ -160,7 +148,7 @@ const LayerTable = (layer) => {
         muiToolbarAlertBannerProps: undefined,
         muiTableContainerProps: {
             sx: {
-                minHeight: '500px',
+                //minHeight: '500px',
             },
         },
         onCreatingRowCancel: () => setValidationErrors({}),
