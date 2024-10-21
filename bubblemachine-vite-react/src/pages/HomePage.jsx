@@ -25,9 +25,8 @@ export default function HomePage() {
           <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
         </Box>
         <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth} sx={{marginTop: 0}}/>
-        <BubbleTable />
       </PrimaryContainer>
-{/*
+
       <PrimaryContainer
         label="New Bubble"
         labelColor="white"
@@ -35,7 +34,7 @@ export default function HomePage() {
         titleColor="#FF0000" // Use a valid color
       >
         <BubbleTable />
-      </PrimaryContainer>*/}
+      </PrimaryContainer>
       <PopUpLayer layer={'1'} />
       <PopUpLayer layer={'2'} />
       <PopUpLayer layer={'3'} />
