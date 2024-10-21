@@ -7,7 +7,7 @@ import { Duration } from "luxon";
 export function formatTime(timeInSeconds){
     const duration = Duration.fromObject({ seconds: timeInSeconds });
     return duration.toFormat("mm:ss:SSS"); // Formats as mm:ss.SSS
-};
+}
 
 /**
  * @param {string} time
@@ -17,7 +17,7 @@ export function convertToMilliseconds(time){
     if (!time) return 0; // Return 0 if time is undefined or null
     const [minutes, seconds, milliseconds] = time.split(':').map(Number);
     return Math.floor((minutes * 60 * 1000) + (seconds * 1000) + milliseconds);
-};
+}
 
 export function convertToSeconds(time){
     if (!time) return 0; // Return 0 if time is undefined or null

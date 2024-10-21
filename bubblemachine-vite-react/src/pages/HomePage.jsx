@@ -11,6 +11,8 @@ export default function HomePage() {
   const audioFile = "https://www.kozco.com/tech/LRMonoPhase4.mp3";
   const [audioDuration, setAudioDuration] = useState(0);
   const [vizWidth, setVizWidth] = useState(800);
+  const [visibleStartTime, setVisibleStartTime] = useState(0);
+  const [visibleEndTime, setVisibleEndTime] = useState(0);
 
 
   return (
@@ -22,9 +24,9 @@ export default function HomePage() {
         titleColor="#00FF00" // Use a valid color
       >
         <Box sx={{ display: "flex", justifyContent: "center", position:"relative", marginBottom:0 }}>
-          <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
+          <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} visibleStartTime={visibleStartTime} visibleEndTime={visibleEndTime}/>
         </Box>
-        <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth} sx={{marginTop: 0}}/>
+        <WaveformVis setAudioDuration={setAudioDuration} setVizWidth={setVizWidth} setVisibleStartTime={setVisibleStartTime} setVisibleEndTime={setVisibleEndTime} sx={{marginTop: 0}}/>
       </PrimaryContainer>
 
       <PrimaryContainer

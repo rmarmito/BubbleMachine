@@ -10,7 +10,7 @@ import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../help
 import CommentDisplay from "../timestamped-comments/CommentsDisplay";
 import useBubbleStore from "../zustand/bubbleStore";
 
-const WaveformVis = ({setAudioDuration, setVizWidth}) => {
+const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVisibleEndTime}) => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -22,10 +22,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
 
-  const bubbles = useBubbleStore((state) => state.bubbles);
   const addBubble = useBubbleStore((state) => state.addBubble);
-  const updateBubble = useBubbleStore((state) => state.updateBubble);
-  const deleteBubble = useBubbleStore((state) => state.deleteBubble);
 
   useEffect(() => {
     if (waveformRef.current && timelineRef.current) {
@@ -78,6 +75,24 @@ const WaveformVis = ({setAudioDuration, setVizWidth}) => {
         setIsPlaying(false);
       });
 
+      ws.on("scroll", (visibleStartTime, visibleEndTime) => {
+        setVisibleStartTime(formatTime(visibleStartTime));
+        setVisibleEndTime(formatTime(visibleEndTime));
+      });
+
+      ws.on("zoom", (minPxPerSec) => {
+        const visibleDuration = waveformRef.current.clientWidth / minPxPerSec;
+        let visibleStartTime = ws.getCurrentTime() - visibleDuration / 2;
+        let visibleEndTime = ws.getCurrentTime() + visibleDuration / 2;
+
+        if (visibleStartTime < 0) {
+          visibleStartTime = 0;
+          visibleEndTime = visibleDuration;
+        }
+
+        setVisibleStartTime(formatTime(visibleStartTime));
+        setVisibleEndTime(formatTime(visibleEndTime));
+      });
       return () => {
         if (ws) {
           ws.destroy();
