@@ -21,11 +21,10 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                 const startTime = convertToMilliseconds(bubbleData.startTime);
                 const stopTime = convertToMilliseconds(bubbleData.stopTime);
                 const bubbleColor = colorToHex(bubbleData.color);
-                if(startTime > visStopMs || stopTime < visStartMs) {
-                    return null;
-                }
+                
                 
                 if(visibleStartTime === 0 && visibleEndTime === 0) {
+
                     const audioLength = Math.floor(audioDuration * 1000);
 
                     // Compute the bubble's start position
@@ -37,6 +36,14 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                     const defaultBubbleWidth = 15;
                     var bubbleWidth = isNaN(preBubbleWidth) || preBubbleWidth === 0 ? defaultBubbleWidth : preBubbleWidth;
                 } else {
+                    if(startTime > visStopMs || stopTime < visStartMs) {
+                        console.log('Bubble not visible', bubbleData);
+                        console.log('visStartMs', visStartMs);
+                        console.log('startTime', startTime);
+                        console.log('visStopMs', visStopMs);
+                        console.log('stopTime', stopTime);
+                        return null;
+                    }
                     const visibleDuration = visStopMs - visStartMs;
                     var startPosition = Math.max(0, (startTime - visStartMs) / visibleDuration * vizWidth)+20;
                     var endPosition = Math.min(vizWidth, (stopTime - visStartMs) / visibleDuration * vizWidth);
@@ -63,7 +70,7 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                     borderBottomLeftRadius: '0',
                     borderBottomRightRadius: '0',
                 };
-
+                console.log('divStyle', divStyle);
                 return <div key={index} style={divStyle}></div>;
             })}
         </div>
