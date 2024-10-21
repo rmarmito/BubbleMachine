@@ -95,6 +95,7 @@ const BubbleTable = () => {
 
 
     const handleCreateBubble = async ({ values, table }) => {
+        table.setCreatingRow(null);
         const newValidationErrors = validateBubble(values);
         if (Object.values(newValidationErrors).some((error) => error)) {
             setValidationErrors(newValidationErrors);
@@ -103,7 +104,7 @@ const BubbleTable = () => {
         values.id = createID();
         setValidationErrors({});
         addBubble({ ...values });
-        table.setCreatingRow(null);
+
     };
 
     const handleSaveBubble = async ({ values, table }) => {
@@ -133,7 +134,7 @@ const BubbleTable = () => {
 
     const table = useMaterialReactTable({
         columns,
-        data: bubbles,
+        data: [],
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
@@ -146,29 +147,10 @@ const BubbleTable = () => {
         enablePagination: false,
         enableSorting: false,
         muiToolbarAlertBannerProps: undefined,
-        muiTableContainerProps: {
-            sx: {
-                //minHeight: '500px',
-            },
-        },
         onCreatingRowCancel: () => setValidationErrors({}),
         onCreatingRowSave: handleCreateBubble,
         onEditingRowCancel: () => setValidationErrors({}),
         onEditingRowSave: handleSaveBubble,
-        renderRowActions: ({ row, table }) => (
-            <Box sx={{ display: 'flex', gap: '1rem' }}>
-                <Tooltip title="Edit">
-                    <IconButton onClick={() => table.setEditingRow(row)}>
-                        <EditIcon />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                    <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
-                        <DeleteIcon />
-                    </IconButton>
-                </Tooltip>
-            </Box>
-        ),
         renderTopToolbarCustomActions: ({ table }) => (
             <Button
                 variant="contained"

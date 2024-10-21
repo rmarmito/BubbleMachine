@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import {
     MaterialReactTable,
     useMaterialReactTable,
@@ -9,7 +9,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import useBubbleStore from '../zustand/bubbleStore';
 import { createID } from '../../helpers/utils';
 
-const BubbleTable = () => {
+const LayerTable = ({layer}) => {
     const [validationErrors, setValidationErrors] = useState({});
     const bubbles = useBubbleStore((state) => state.bubbles);
     const addBubble = useBubbleStore((state) => state.addBubble);
@@ -94,19 +94,20 @@ const BubbleTable = () => {
     );
 
 
-    const handleCreateBubble = async ({ values, table }) => {
+    const handleCreateBubble = useCallback(async ({ values, table }) => {
         const newValidationErrors = validateBubble(values);
         if (Object.values(newValidationErrors).some((error) => error)) {
             setValidationErrors(newValidationErrors);
             return;
         }
         values.id = createID();
+        console.log('values', values);
         setValidationErrors({});
         addBubble({ ...values });
         table.setCreatingRow(null);
-    };
+    },[addBubble]);
 
-    const handleSaveBubble = async ({ values, table }) => {
+    const handleSaveBubble = useCallback(async ({ values, table }) => {
         const newValidationErrors = validateBubble(values);
         if (Object.values(newValidationErrors).some((error) => error)) {
             setValidationErrors(newValidationErrors);
@@ -114,7 +115,6 @@ const BubbleTable = () => {
         }
         setValidationErrors({});    
         const index = bubbles.findIndex((bubble) => bubble.id === values.id);
-        console.log('Found Value object', values);
         if (index !== -1) {
             updateBubble(index, values);
             console.log('Updated bubble at index:', index);
@@ -122,18 +122,18 @@ const BubbleTable = () => {
             console.error('Bubble not found:', values.id);
         }
         table.setEditingRow(null);
-    };
+    }, [bubbles, updateBubble]);
 
-    const openDeleteConfirmModal = (row) => {
+    const openDeleteConfirmModal = useCallback((row) => {
         if (window.confirm('Are you sure you want to delete this bubble?')) {
             const index = bubbles.findIndex((bubble) => bubble.id === row.original.id);
             deleteBubble(index);
         }
-    };
+    }, [bubbles, deleteBubble]);
 
     const table = useMaterialReactTable({
         columns,
-        data: bubbles,
+        data: bubbles.filter(bubble => bubble.layer === layer),
         createDisplayMode: 'row',
         editDisplayMode: 'row',
         enableEditing: true,
@@ -169,16 +169,6 @@ const BubbleTable = () => {
                 </Tooltip>
             </Box>
         ),
-        renderTopToolbarCustomActions: ({ table }) => (
-            <Button
-                variant="contained"
-                onClick={() => {
-                    table.setCreatingRow(true);
-                }}
-            >
-                Create New Bubble
-            </Button>
-        ),
         state: {
             isLoading: false,
             isSaving: false,
@@ -190,7 +180,7 @@ const BubbleTable = () => {
     return <MaterialReactTable table={table} />;
 };
 
-export default BubbleTable;
+export default LayerTable;
 
 const validateRequired = (value) => String(value).length > 0;
 const validateTime = (value) => 
