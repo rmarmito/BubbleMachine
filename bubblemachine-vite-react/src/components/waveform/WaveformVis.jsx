@@ -117,7 +117,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
         console.log("region:", region.id);
         console.log("bubbles:", bubbles);
 
-        if (index !== -1) {
+        if (id) {
             updateBubble(id, values);
             console.log('Updated bubble at id:', id);
         } else {

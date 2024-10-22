@@ -41,16 +41,11 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                     var bubbleWidth = isNaN(preBubbleWidth) || preBubbleWidth === 0 ? defaultBubbleWidth : preBubbleWidth;
                 } else {
                     if(startTime > visStopMs || stopTime < visStartMs) {
-                        console.log('Bubble not visible', bubbleData);
-                        console.log('visStartMs', visStartMs);
-                        console.log('startTime', startTime);
-                        console.log('visStopMs', visStopMs);
-                        console.log('stopTime', stopTime);
                         return null;
                     }
                     const visibleDuration = visStopMs - visStartMs;
                     var startPosition = Math.max(0, (startTime - visStartMs) / visibleDuration * vizWidth)+20;
-                    var endPosition = Math.min(vizWidth, (stopTime - visStartMs) / visibleDuration * vizWidth);
+                    var endPosition = Math.min(vizWidth, (stopTime - visStartMs) / visibleDuration * vizWidth)+20;
                     var bubbleWidth = endPosition - startPosition;
                 }
                 // Convert level to a pixel height
