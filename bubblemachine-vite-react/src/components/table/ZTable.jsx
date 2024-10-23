@@ -28,7 +28,7 @@ const BubbleTable = () => {
             accessorKey: 'layer',
             header: 'Layer',
             editVariant: 'select',
-            editSelectOptions: ["1", "2", "3", "4", "5", "6"],
+            editSelectOptions: ["1", "2", "3"],
             muiEditTextFieldProps: {
                 select: true,
                 error: !!validationErrors?.layer,

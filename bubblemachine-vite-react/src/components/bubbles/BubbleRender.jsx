@@ -1,31 +1,40 @@
-import React from "react";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { convertToMilliseconds, colorToHex } from "../../helpers/utils.jsx";
+import { useCallback } from "react";
 const BubbleRender = ({
   audioDuration = 0,
   vizWidth = 800,
   visibleStartTime = 0,
   visibleEndTime = audioDuration,
   setSelectedBubble,
+  selectedBubble,
 }) => {
   const bubbleData = useBubbleStore((state) => state.bubbles);
   console.log("visibleStartTime", visibleStartTime);
   console.log("visibleEndTime", visibleEndTime);
   const visStartMs = convertToMilliseconds(visibleStartTime);
   const visStopMs = convertToMilliseconds(visibleEndTime);
+  console.log("visStartMs", visStartMs);
+  console.log("visStopMs", visStopMs);
 
-  const handleClick = (bubble) => {
-    console.log("Bubble clicked:", bubble);
-    setSelectedBubble(bubble);
-  };
+  const handleClick = useCallback(
+    (bubble) => {
+      if (bubble === selectedBubble) {
+        setSelectedBubble(null);
+      } else
+      setSelectedBubble(bubble);
+    },
+    [selectedBubble, setSelectedBubble]
+  );
 
+  const handleBlur = useCallback(() => {
+    setSelectedBubble(null);
+  },[setSelectedBubble]);
+  
   return (
     // original height: 300px
     <div style={{ position: "relative", width: "100%", height: "200px" }}>
-      {console.log("bubbleData", bubbleData)}
       {bubbleData.map((bubbleData, index) => {
-        console.log("startTime", bubbleData.startTime);
-        console.log("stopTime", bubbleData.stopTime);
         const startTime = convertToMilliseconds(bubbleData.startTime);
         const stopTime = convertToMilliseconds(bubbleData.stopTime);
         const bubbleColor = colorToHex(bubbleData.color);
@@ -69,7 +78,7 @@ const BubbleRender = ({
         const bubbleHeight = bubbleData.layer * 50;
 
         // Convert level to z-index
-        const bubbleLevel = 6 - bubbleData.layer;
+        const bubbleLevel = (3 - bubbleData.layer) * 2;
 
         // Inline styles for the bubble
         const divStyle = {
@@ -86,12 +95,16 @@ const BubbleRender = ({
           borderBottomLeftRadius: "0",
           borderBottomRightRadius: "0",
         };
-        console.log("divStyle", divStyle);
+        
+        console.log("Bubble style 1:", divStyle);
+        console.log("Bubble Data", bubbleData);
         return (
           <div
             key={index}
             style={divStyle}
+            tabIndex={0}
             onClick={() => handleClick(bubbleData)}
+            onBlur={() => handleBlur()}
           ></div>
         );
       })}

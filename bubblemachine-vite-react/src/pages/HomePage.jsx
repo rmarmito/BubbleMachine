@@ -36,6 +36,7 @@ export default function HomePage() {
             visibleStartTime={visibleStartTime}
             visibleEndTime={visibleEndTime}
             setSelectedBubble={setSelectedBubble}
+            selectedBubble={selectedBubble}
           />
         </Box>
         <WaveformVis

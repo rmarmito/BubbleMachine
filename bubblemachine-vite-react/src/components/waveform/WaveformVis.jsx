@@ -58,8 +58,8 @@ const WaveformVis = ({
             formatTimeCallback: (seconds) => formatTime(seconds),
           }),
           ZoomPlugin.create({
-            scale: 0.5,
-            maxZoom: 1000,
+            scale: 0.8,
+            maxZoom: 100,
             autoCenter: false,
           }),
         ],
@@ -70,22 +70,13 @@ const WaveformVis = ({
       ws.on("ready", () => {
         setDuration(ws.getDuration());
         setAudioDuration(ws.getDuration());
-        regionsPluginRef.current.clearRegions();
-        if (wavesurfer && selectedBubble) {
-          const { startTime, stopTime, color } = selectedBubble;
-          regionsPluginRef.current.addRegion({
-            id: selectedBubble.id,
-            start: convertToSeconds(startTime),
-            end: convertToSeconds(stopTime),
-            color: colorToRGB(color),
-            drag: false,
-            resize: true,
-          });
-        }
+        updateRegions(regionsPluginRef, wavesurfer, selectedBubble);
       });
 
       ws.on("redraw", () => {
         setVizWidth(waveformRef.current.clientWidth);
+        console.log("Redraw", waveformRef.current.clientWidth);
+        updateRegions(regionsPluginRef, wavesurfer, selectedBubble);
       });
 
       ws.on("audioprocess", (time) => {
@@ -107,16 +98,21 @@ const WaveformVis = ({
 
       ws.on("zoom", (minPxPerSec) => {
         const visibleDuration = waveformRef.current.clientWidth / minPxPerSec;
-        let visibleStartTime = ws.getCurrentTime() - visibleDuration / 2;
-        let visibleEndTime = ws.getCurrentTime() + visibleDuration / 2;
+        let visibleStartTime = ws.getDuration() - visibleDuration / 2;
+        let visibleEndTime = ws.getDuration() + visibleDuration / 2;
 
+        if(visibleEndTime > ws.getDuration()) {
+          visibleEndTime = ws.getDuration();
+          visibleStartTime = ws.getDuration() - visibleDuration;
+        }
         if (visibleStartTime < 0) {
           visibleStartTime = 0;
           visibleEndTime = visibleDuration;
         }
-
+        console.log("Zoom:", { visibleStartTime, visibleEndTime });
         setVisibleStartTime(formatTime(visibleStartTime));
         setVisibleEndTime(formatTime(visibleEndTime));
+        updateRegions(regionsPluginRef, wavesurfer, selectedBubble);
       });
 
       regionsPluginRef.current.on("region-updated", (region) => {
@@ -124,13 +120,11 @@ const WaveformVis = ({
         const startTime = formatTime(region.start);
         const stopTime = formatTime(region.end);
         const values = { startTime, stopTime };
-        console.log("Region updated2:", { region });
-        console.log("region:", region.id);
-        console.log("bubbles:", bubbles);
 
         if (id) {
           updateBubble(id, values);
           console.log("Updated bubble at id:", id);
+          console.log("Updated bubble with values:", values);
         } else {
           console.error("Bubble not found:", id);
         }
@@ -166,18 +160,22 @@ const WaveformVis = ({
   }, [bubbles]);*/
 
   useEffect(() => {
-    if (wavesurfer && selectedBubble) {
-      console.log("Selected Bubble:", selectedBubble);
-      const { startTime, stopTime, color } = selectedBubble;
+    if (wavesurfer) {
       regionsPluginRef.current.clearRegions();
-      regionsPluginRef.current.addRegion({
-        id: selectedBubble.id,
-        start: convertToSeconds(startTime),
-        end: convertToSeconds(stopTime),
-        color: colorToRGB(color),
-        drag: false,
-        resize: true,
-      });
+      if(selectedBubble) {
+        console.log("Selected Bubble:", selectedBubble);
+        const { startTime, stopTime, color } = selectedBubble;
+        console.log("Selected Bubble:", convertToSeconds(startTime), convertToSeconds(stopTime), color );
+        regionsPluginRef.current.clearRegions();
+        regionsPluginRef.current.addRegion({
+          id: selectedBubble.id,
+          start: convertToSeconds(startTime),
+          end: convertToSeconds(stopTime),
+          color: colorToRGB(color),
+          drag: false,
+          resize: true,
+        });
+      }
     }
   }, [selectedBubble, wavesurfer]);
 
@@ -340,3 +338,19 @@ const WaveformVis = ({
 };
 
 export default WaveformVis;
+
+const updateRegions = (regionsPluginRef, wavesurfer, selectedBubble) => {
+  if (regionsPluginRef.current && wavesurfer && selectedBubble) {
+    const { startTime, stopTime, color } = selectedBubble;
+    regionsPluginRef.current.clearRegions();
+    regionsPluginRef.current.addRegion({
+      id: selectedBubble.id,
+      start: convertToSeconds(startTime),
+      end: convertToSeconds(stopTime),
+      color: colorToRGB(color),
+      drag: false,
+      resize: true,
+    });
+    console.log("Updated region:", { startTime, stopTime, color });
+  }
+};

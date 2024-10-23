@@ -22,7 +22,7 @@ export function convertToMilliseconds(time){
 export function convertToSeconds(time){
     if (!time) return 0; // Return 0 if time is undefined or null
     const [minutes, seconds, milliseconds] = time.split(':').map(Number);
-    return Math.floor((minutes * 60) + seconds + (milliseconds / 1000));
+    return (minutes * 60) + seconds + (milliseconds / 1000);
 }
 
 /**
