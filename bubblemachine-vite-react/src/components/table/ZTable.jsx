@@ -113,11 +113,10 @@ const BubbleTable = () => {
             return;
         }
         setValidationErrors({});    
-        const index = bubbles.findIndex((bubble) => bubble.id === values.id);
         console.log('Found Value object', values);
-        if (index !== -1) {
-            updateBubble(index, values);
-            console.log('Updated bubble at index:', index);
+        if (values.id !== null) {
+            updateBubble(values.id, values);
+            console.log('Updated bubble at index:', values.id);
         } else {
             console.error('Bubble not found:', values.id);
         }
@@ -138,7 +137,7 @@ const BubbleTable = () => {
         editDisplayMode: 'row',
         enableEditing: true,
         positionActionsColumn: 'last',
-        initialState: { columnVisibility: { id: false } },
+        initialState: { columnVisibility: { id: true } },
         getRowId: (row) => row.id,
         enableToolbarInternalActions: false,
         enableColumnActions: false,

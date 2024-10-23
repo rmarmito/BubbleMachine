@@ -15,7 +15,14 @@ import {
 import CommentDisplay from "../timestamped-comments/CommentsDisplay";
 import useBubbleStore from "../zustand/bubbleStore";
 
-const WaveformVis = ({ setAudioDuration, setVizWidth, setAudioFileName }) => {
+const WaveformVis = ({
+  setAudioDuration,
+  setVizWidth,
+  setAudioFileName,
+  setVisibleStartTime,
+  setVisibleEndTime,
+  selectedBubble,
+}) => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -27,9 +34,8 @@ const WaveformVis = ({ setAudioDuration, setVizWidth, setAudioFileName }) => {
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
   const bubbles = useBubbleStore((state) => state.bubbles);
-  const addBubble = useBubbleStore((state) => state.addBubble);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
-  const deleteBubble = useBubbleStore((state) => state.deleteBubble);
+  const addBubble = useBubbleStore((state) => state.addBubble);
 
   useEffect(() => {
     if (waveformRef.current && timelineRef.current) {
@@ -64,6 +70,18 @@ const WaveformVis = ({ setAudioDuration, setVizWidth, setAudioFileName }) => {
       ws.on("ready", () => {
         setDuration(ws.getDuration());
         setAudioDuration(ws.getDuration());
+        regionsPluginRef.current.clearRegions();
+        if (wavesurfer && selectedBubble) {
+          const { startTime, stopTime, color } = selectedBubble;
+          regionsPluginRef.current.addRegion({
+            id: selectedBubble.id,
+            start: convertToSeconds(startTime),
+            end: convertToSeconds(stopTime),
+            color: colorToRGB(color),
+            drag: false,
+            resize: true,
+          });
+        }
       });
 
       ws.on("redraw", () => {
@@ -80,6 +98,42 @@ const WaveformVis = ({ setAudioDuration, setVizWidth, setAudioFileName }) => {
 
       ws.on("pause", () => {
         setIsPlaying(false);
+      });
+
+      ws.on("scroll", (visibleStartTime, visibleEndTime) => {
+        setVisibleStartTime(formatTime(visibleStartTime));
+        setVisibleEndTime(formatTime(visibleEndTime));
+      });
+
+      ws.on("zoom", (minPxPerSec) => {
+        const visibleDuration = waveformRef.current.clientWidth / minPxPerSec;
+        let visibleStartTime = ws.getCurrentTime() - visibleDuration / 2;
+        let visibleEndTime = ws.getCurrentTime() + visibleDuration / 2;
+
+        if (visibleStartTime < 0) {
+          visibleStartTime = 0;
+          visibleEndTime = visibleDuration;
+        }
+
+        setVisibleStartTime(formatTime(visibleStartTime));
+        setVisibleEndTime(formatTime(visibleEndTime));
+      });
+
+      regionsPluginRef.current.on("region-updated", (region) => {
+        const id = region.id;
+        const startTime = formatTime(region.start);
+        const stopTime = formatTime(region.end);
+        const values = { startTime, stopTime };
+        console.log("Region updated2:", { region });
+        console.log("region:", region.id);
+        console.log("bubbles:", bubbles);
+
+        if (id) {
+          updateBubble(id, values);
+          console.log("Updated bubble at id:", id);
+        } else {
+          console.error("Bubble not found:", id);
+        }
       });
 
       return () => {
@@ -110,6 +164,22 @@ const WaveformVis = ({ setAudioDuration, setVizWidth, setAudioFileName }) => {
       });     
     }
   }, [bubbles]);*/
+
+  useEffect(() => {
+    if (wavesurfer && selectedBubble) {
+      console.log("Selected Bubble:", selectedBubble);
+      const { startTime, stopTime, color } = selectedBubble;
+      regionsPluginRef.current.clearRegions();
+      regionsPluginRef.current.addRegion({
+        id: selectedBubble.id,
+        start: convertToSeconds(startTime),
+        end: convertToSeconds(stopTime),
+        color: colorToRGB(color),
+        drag: false,
+        resize: true,
+      });
+    }
+  }, [selectedBubble, wavesurfer]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

@@ -10,6 +10,9 @@ export default function HomePage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [vizWidth, setVizWidth] = useState(800);
   const [audioFileName, setAudioFileName] = useState(""); // State for audio file name
+  const [visibleStartTime, setVisibleStartTime] = useState(0);
+  const [visibleEndTime, setVisibleEndTime] = useState(0);
+  const [selectedBubble, setSelectedBubble] = useState(null);
 
   return (
     <div>
@@ -27,14 +30,22 @@ export default function HomePage() {
             marginBottom: 0,
           }}
         >
-          <BubbleRender audioDuration={audioDuration} vizWidth={vizWidth} />
+          <BubbleRender
+            audioDuration={audioDuration}
+            vizWidth={vizWidth}
+            visibleStartTime={visibleStartTime}
+            visibleEndTime={visibleEndTime}
+            setSelectedBubble={setSelectedBubble}
+          />
         </Box>
-
-        {/* Pass down functions to update audio duration and width */}
         <WaveformVis
           setAudioDuration={setAudioDuration}
           setVizWidth={setVizWidth}
+          setVisibleStartTime={setVisibleStartTime}
+          setVisibleEndTime={setVisibleEndTime}
+          selectedBubble={selectedBubble}
           setAudioFileName={setAudioFileName} // Pass down function to update filename
+          sx={{ marginTop: 0 }}
         />
       </PrimaryContainer>
 
