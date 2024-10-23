@@ -10,7 +10,7 @@ import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../help
 import CommentDisplay from "../timestamped-comments/CommentsDisplay";
 import useBubbleStore from "../zustand/bubbleStore";
 
-const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVisibleEndTime}) => {
+const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVisibleEndTime, selectedBubble}) => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -22,6 +22,8 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
 
+  const bubbles = useBubbleStore((state) => state.bubbles);
+  const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
   useEffect(() => {
@@ -57,6 +59,18 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       ws.on("ready", () => {
         setDuration(ws.getDuration());
         setAudioDuration(ws.getDuration());
+        regionsPluginRef.current.clearRegions();
+        if (wavesurfer && selectedBubble) {
+          const { startTime, stopTime, color } = selectedBubble;
+          regionsPluginRef.current.addRegion({
+            id: selectedBubble.id,
+            start: convertToSeconds(startTime),
+            end: convertToSeconds(stopTime),
+            color: colorToRGB(color),
+            drag: false,
+            resize: true,
+          });
+        }
       });
 
       ws.on("redraw", () => {
@@ -93,6 +107,24 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
         setVisibleStartTime(formatTime(visibleStartTime));
         setVisibleEndTime(formatTime(visibleEndTime));
       });
+
+      regionsPluginRef.current.on("region-updated", (region) => {
+        const id = region.id;
+        const startTime = formatTime(region.start);
+        const stopTime = formatTime(region.end);
+        const values = { startTime, stopTime };
+        console.log("Region updated2:", { region });
+        console.log("region:", region.id);
+        console.log("bubbles:", bubbles);
+
+        if (id) {
+            updateBubble(id, values);
+            console.log('Updated bubble at id:', id);
+        } else {
+            console.error('Bubble not found:', id);
+        }
+      });
+
       return () => {
         if (ws) {
           ws.destroy();
@@ -121,6 +153,26 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       });     
     }
   }, [bubbles]);*/
+
+
+
+  useEffect(() => {
+    if (wavesurfer && selectedBubble) {
+      console.log("Selected Bubble:", selectedBubble);
+      const { startTime, stopTime, color } = selectedBubble;
+      regionsPluginRef.current.clearRegions();
+      regionsPluginRef.current.addRegion({
+        id: selectedBubble.id,
+        start: convertToSeconds(startTime),
+        end: convertToSeconds(stopTime),
+        color: colorToRGB(color),
+        drag: false,
+        resize: true,
+      });
+    }
+  }, [selectedBubble, wavesurfer]);
+
+
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

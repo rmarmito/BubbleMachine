@@ -3,13 +3,17 @@ import useBubbleStore from '../zustand/bubbleStore';
 import { convertToMilliseconds, colorToHex} from '../../helpers/utils';
 
 //import './BubbleRender.css'; // Assuming you have a CSS file for additional styling
-const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, visibleEndTime = audioDuration}) => {
+const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, visibleEndTime = audioDuration, setSelectedBubble}) => {
     const bubbleData = useBubbleStore((state) => state.bubbles);
     console.log('visibleStartTime', visibleStartTime);
     console.log('visibleEndTime', visibleEndTime);
     const visStartMs = convertToMilliseconds(visibleStartTime);
     const visStopMs = convertToMilliseconds(visibleEndTime);
 
+    const handleClick = (bubble) => {
+        console.log('Bubble clicked:', bubble);
+        setSelectedBubble(bubble);
+    };
 
     return (
         // original height: 300px
@@ -37,16 +41,11 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                     var bubbleWidth = isNaN(preBubbleWidth) || preBubbleWidth === 0 ? defaultBubbleWidth : preBubbleWidth;
                 } else {
                     if(startTime > visStopMs || stopTime < visStartMs) {
-                        console.log('Bubble not visible', bubbleData);
-                        console.log('visStartMs', visStartMs);
-                        console.log('startTime', startTime);
-                        console.log('visStopMs', visStopMs);
-                        console.log('stopTime', stopTime);
                         return null;
                     }
                     const visibleDuration = visStopMs - visStartMs;
                     var startPosition = Math.max(0, (startTime - visStartMs) / visibleDuration * vizWidth)+20;
-                    var endPosition = Math.min(vizWidth, (stopTime - visStartMs) / visibleDuration * vizWidth);
+                    var endPosition = Math.min(vizWidth, (stopTime - visStartMs) / visibleDuration * vizWidth)+20;
                     var bubbleWidth = endPosition - startPosition;
                 }
                 // Convert level to a pixel height
@@ -71,7 +70,7 @@ const BubbleRender = ({ audioDuration = 0, vizWidth = 800, visibleStartTime=0, v
                     borderBottomRightRadius: '0',
                 };
                 console.log('divStyle', divStyle);
-                return <div key={index} style={divStyle}></div>;
+                return <div key={index} style={divStyle}onClick={() => handleClick(bubbleData)}></div>;
             })}
         </div>
     );
