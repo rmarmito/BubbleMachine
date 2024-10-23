@@ -6,8 +6,8 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import useBubbleStore from '../zustand/bubbleStore';
-import { createID } from '../../helpers/utils';
+import useBubbleStore from '../zustand/bubbleStore.jsx';
+import { createID } from '../../helpers/utils.jsx';
 
 const BubbleTable = () => {
     const [validationErrors, setValidationErrors] = useState({});

@@ -4,7 +4,6 @@ import BubbleRender from "../components/bubbles/BubbleRender";
 import PrimaryContainer from "../components/layout/PrimaryContainer";
 import WaveformVis from "../components/waveform/WaveformVis";
 import BubbleTable from "../components/table/ZTable";
-import LayerTable from "../components/table/LayerTable";
 import PopUpLayer from "../components/table/PopUpLayer";
 
 export default function HomePage() {

@@ -1,13 +1,13 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
     MaterialReactTable,
     useMaterialReactTable,
 } from 'material-react-table';
-import { Box, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import useBubbleStore from '../zustand/bubbleStore';
-import { createID } from '../../helpers/utils';
+import useBubbleStore from '../zustand/bubbleStore.jsx';
+import { createID } from '../../helpers/utils.jsx';
 
 const LayerTable = ({layer}) => {
     const [validationErrors, setValidationErrors] = useState({});
