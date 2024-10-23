@@ -11,8 +11,7 @@ import {
   createID,
   convertToSeconds,
   colorToRGB,
-} from "../../helpers/utils";
-import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../helpers/utils.jsx";
+} from "../../helpers/utils.jsx";
 import CommentDisplay from "../timestamped-comments/CommentsDisplay.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 
@@ -333,15 +332,6 @@ const WaveformVis = ({
             <Button variant="contained" color="primary" onClick={addRegion}>
               Add Region
             </Button>
-            {/*
-            {selectedStartTime !== null && (
-              <div>
-                <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
-                {selectedEndTime !== null && (
-                  <span>, End Time: {formatTime(selectedEndTime)}</span>
-                )}
-              </div>
-            )}*/}
           </div>
         </div>
       </div>
