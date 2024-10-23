@@ -1,7 +1,6 @@
-import React from 'react';
 import PrimaryContainer from '../layout/PrimaryContainer';
-import LayerTable from './LayerTable';
-import useBubbleStore from '../zustand/bubbleStore';
+import LayerTable from './LayerTable.jsx';
+import useBubbleStore from '../zustand/bubbleStore.jsx';
 
 const PopUpLayer = ({ layer }) => {
     const bubbles = useBubbleStore((state) => state.bubbles);

@@ -5,10 +5,10 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
-import ProgressBar from "./Progressbar";
-import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../helpers/utils";
-import CommentDisplay from "../timestamped-comments/CommentsDisplay";
-import useBubbleStore from "../zustand/bubbleStore";
+import ProgressBar from "./Progressbar.jsx";
+import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../helpers/utils.jsx";
+import CommentDisplay from "../timestamped-comments/CommentsDisplay.jsx";
+import useBubbleStore from "../zustand/bubbleStore.jsx";
 
 const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVisibleEndTime, selectedBubble}) => {
   const waveformRef = useRef(null);
