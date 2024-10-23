@@ -12,8 +12,9 @@ import {
   convertToSeconds,
   colorToRGB,
 } from "../../helpers/utils";
-import CommentDisplay from "../timestamped-comments/CommentsDisplay";
-import useBubbleStore from "../zustand/bubbleStore";
+import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../helpers/utils.jsx";
+import CommentDisplay from "../timestamped-comments/CommentsDisplay.jsx";
+import useBubbleStore from "../zustand/bubbleStore.jsx";
 
 const WaveformVis = ({
   setAudioDuration,
