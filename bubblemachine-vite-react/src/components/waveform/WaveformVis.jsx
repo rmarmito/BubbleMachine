@@ -5,12 +5,24 @@ import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
-import ProgressBar from "./Progressbar.jsx";
-import { formatTime, createID, convertToSeconds, colorToRGB,  } from "../../helpers/utils.jsx";
+import ProgressBar from "./Progressbar";
+import {
+  formatTime,
+  createID,
+  convertToSeconds,
+  colorToRGB,
+} from "../../helpers/utils.jsx";
 import CommentDisplay from "../timestamped-comments/CommentsDisplay.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 
-const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVisibleEndTime, selectedBubble}) => {
+const WaveformVis = ({
+  setAudioDuration,
+  setVizWidth,
+  setAudioFileName,
+  setVisibleStartTime,
+  setVisibleEndTime,
+  selectedBubble,
+}) => {
   const waveformRef = useRef(null);
   const timelineRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -21,7 +33,6 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
   const [duration, setDuration] = useState(0);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
-
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
@@ -118,10 +129,10 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
         console.log("bubbles:", bubbles);
 
         if (id) {
-            updateBubble(id, values);
-            console.log('Updated bubble at id:', id);
+          updateBubble(id, values);
+          console.log("Updated bubble at id:", id);
         } else {
-            console.error('Bubble not found:', id);
+          console.error("Bubble not found:", id);
         }
       });
 
@@ -138,7 +149,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       wavesurfer.load(audioFile);
     }
   }, [audioFile, wavesurfer]);
-/*
+  /*
   useEffect(() => {
     if (wavesurfer) {
       bubbles.map((bubble) => {
@@ -153,8 +164,6 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       });     
     }
   }, [bubbles]);*/
-
-
 
   useEffect(() => {
     if (wavesurfer && selectedBubble) {
@@ -172,13 +181,12 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
     }
   }, [selectedBubble, wavesurfer]);
 
-
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const fileUrl = URL.createObjectURL(file);
       setAudioFile(fileUrl);
+      setAudioFileName(file.name); // Use prop function to set audio file name
     }
   };
 
@@ -210,7 +218,13 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       loop: true,
       color: "rgba(0,123,255,0.5)",
     });*/
-    addBubble({id, startTime: formatTime(start), stopTime: formatTime(end), color: "Blue", layer: 1 });
+    addBubble({
+      id,
+      startTime: formatTime(start),
+      stopTime: formatTime(end),
+      color: "Blue",
+      layer: 1,
+    });
     console.log("Created region:", { start, end });
   };
 
@@ -229,8 +243,13 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
         end: endTime,
         color: "rgba(255, 0, 0, 0.5)",
       });*/
-      addBubble({id, startTime: formatTime(currentTime), stopTime: formatTime(endTime), color: "Red", layer: 1 });
-
+      addBubble({
+        id,
+        startTime: formatTime(currentTime),
+        stopTime: formatTime(endTime),
+        color: "Red",
+        layer: 1,
+      });
     }
   };
 
@@ -241,7 +260,7 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
   };
 
   return (
-    <div style={{ padding: "20px", textAlign: "center", paddingTop: 0}}>
+    <div style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}>
       <div
         style={{ position: "relative", display: "inline-block", width: "100%" }}
       >
@@ -257,13 +276,16 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
       <span>
         {formatTime(currentTime)} / {formatTime(duration)}
       </span>
-      <div style={{position: "relative"}} >
-        <CommentDisplay wavesurfer={wavesurfer} currentTime={currentTime} style={{position: "absolute", right: 0, marginBottom: "10px"}}/>
+      <div style={{ position: "relative" }}>
+        <CommentDisplay
+          wavesurfer={wavesurfer}
+          currentTime={currentTime}
+          style={{ position: "absolute", right: 0, marginBottom: "10px" }}
+        />
       </div>
       <div style={{ marginTop: "10px", position: "relative" }}>
-
         <div />
-        <div style={{ marginTop: "10px", top: 0}}>
+        <div style={{ marginTop: "10px", top: 0 }}>
           <div>
             <Button
               variant="contained"
@@ -282,7 +304,12 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
             />
             <div />
             <label htmlFor="audio-file-input">
-            <Button variant="contained" color="primary" component="span" style={{ position: "absolute", right: 0 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                component="span"
+                style={{ position: "absolute", right: 0 }}
+              >
                 Upload Audio
               </Button>
             </label>
@@ -302,21 +329,9 @@ const WaveformVis = ({setAudioDuration, setVizWidth, setVisibleStartTime, setVis
               Mark End Time
             </Button>
 
-
-
-
             <Button variant="contained" color="primary" onClick={addRegion}>
               Add Region
             </Button>
-            {/*
-            {selectedStartTime !== null && (
-              <div>
-                <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
-                {selectedEndTime !== null && (
-                  <span>, End Time: {formatTime(selectedEndTime)}</span>
-                )}
-              </div>
-            )}*/}
           </div>
         </div>
       </div>
