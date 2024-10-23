@@ -59,6 +59,11 @@ const BubbleRender = ({
               : preBubbleWidth;
         } else {
           if (startTime > visStopMs || stopTime < visStartMs) {
+            console.log("Bubble not in view");
+            console.log("Start Time", startTime);
+            console.log("Stop Time", stopTime);
+            console.log("Visible Start Time", visStartMs);
+            console.log("Visible Stop Time", visStopMs);
             return null;
           }
           const visibleDuration = visStopMs - visStartMs;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
@@ -58,8 +58,9 @@ const WaveformVis = ({
             formatTimeCallback: (seconds) => formatTime(seconds),
           }),
           ZoomPlugin.create({
-            scale: 0.8,
-            maxZoom: 100,
+            deltaThreshold: 10,
+            scale: 7,
+            maxZoom: 50,
             autoCenter: false,
           }),
         ],
@@ -98,8 +99,8 @@ const WaveformVis = ({
 
       ws.on("zoom", (minPxPerSec) => {
         const visibleDuration = waveformRef.current.clientWidth / minPxPerSec;
-        let visibleStartTime = ws.getDuration() - visibleDuration / 2;
-        let visibleEndTime = ws.getDuration() + visibleDuration / 2;
+        let visibleStartTime = ws.getScroll() / minPxPerSec;
+        let visibleEndTime = visibleStartTime + visibleDuration;
 
         if(visibleEndTime > ws.getDuration()) {
           visibleEndTime = ws.getDuration();
