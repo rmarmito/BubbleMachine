@@ -33,10 +33,12 @@ const WaveformVis = ({
   const [duration, setDuration] = useState(0);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
+
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
+  // Initialize WaveSurfer and its plugins
   useEffect(() => {
     if (waveformRef.current && timelineRef.current) {
       regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
@@ -57,11 +59,7 @@ const WaveformVis = ({
             labelSize: "11px",
             formatTimeCallback: (seconds) => formatTime(seconds),
           }),
-          ZoomPlugin.create({
-            scale: 0.5,
-            maxZoom: 1000,
-            autoCenter: false,
-          }),
+          ZoomPlugin.create({ scale: 0.5, maxZoom: 1000, autoCenter: false }),
         ],
       });
 
@@ -71,7 +69,8 @@ const WaveformVis = ({
         setDuration(ws.getDuration());
         setAudioDuration(ws.getDuration());
         regionsPluginRef.current.clearRegions();
-        if (wavesurfer && selectedBubble) {
+
+        if (selectedBubble) {
           const { startTime, stopTime, color } = selectedBubble;
           regionsPluginRef.current.addRegion({
             id: selectedBubble.id,
@@ -123,13 +122,9 @@ const WaveformVis = ({
         const id = region.id;
         const startTime = formatTime(region.start);
         const stopTime = formatTime(region.end);
-        const values = { startTime, stopTime };
-        console.log("Region updated2:", { region });
-        console.log("region:", region.id);
-        console.log("bubbles:", bubbles);
 
         if (id) {
-          updateBubble(id, values);
+          updateBubble(id, { startTime, stopTime });
           console.log("Updated bubble at id:", id);
         } else {
           console.error("Bubble not found:", id);
@@ -144,32 +139,19 @@ const WaveformVis = ({
     }
   }, []);
 
+  // Load audio file into WaveSurfer
   useEffect(() => {
     if (wavesurfer && audioFile) {
       wavesurfer.load(audioFile);
     }
   }, [audioFile, wavesurfer]);
-  /*
-  useEffect(() => {
-    if (wavesurfer) {
-      bubbles.map((bubble) => {
-            regionsPluginRef.current.addRegion({
-            id: bubble.id,
-            start: convertToSeconds(bubble.startTime),
-            end: convertToSeconds(bubble.stopTime),
-            color: colorToRGB(bubble.color),
-            drag: false,
-            resize: true,        
-          });
-      });     
-    }
-  }, [bubbles]);*/
 
+  // Update region when selectedBubble changes
   useEffect(() => {
     if (wavesurfer && selectedBubble) {
-      console.log("Selected Bubble:", selectedBubble);
-      const { startTime, stopTime, color } = selectedBubble;
       regionsPluginRef.current.clearRegions();
+
+      const { startTime, stopTime, color } = selectedBubble;
       regionsPluginRef.current.addRegion({
         id: selectedBubble.id,
         start: convertToSeconds(startTime),
@@ -181,6 +163,7 @@ const WaveformVis = ({
     }
   }, [selectedBubble, wavesurfer]);
 
+  // Handle file selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -190,6 +173,7 @@ const WaveformVis = ({
     }
   };
 
+  // Mark start time for bubble creation
   const markStartTime = () => {
     if (wavesurfer) {
       const time = wavesurfer.getCurrentTime();
@@ -199,6 +183,7 @@ const WaveformVis = ({
     }
   };
 
+  // Mark end time and create a bubble region
   const markEndTime = () => {
     if (wavesurfer && selectedStartTime !== null) {
       const time = wavesurfer.getCurrentTime();
@@ -208,16 +193,11 @@ const WaveformVis = ({
     }
   };
 
+  // Create a new bubble region
   const createRegion = (start, end) => {
     if (start > end) [start, end] = [end, start];
+
     const id = createID();
-    /*regionsPluginRef.current.addRegion({
-      id,
-      start,
-      end,
-      loop: true,
-      color: "rgba(0,123,255,0.5)",
-    });*/
     addBubble({
       id,
       startTime: formatTime(start),
@@ -225,24 +205,25 @@ const WaveformVis = ({
       color: "Blue",
       layer: 1,
     });
+
     console.log("Created region:", { start, end });
   };
 
+  // Add a new region of fixed duration
   const addRegion = () => {
     if (regionsPluginRef.current && wavesurfer) {
       const id = createID();
       const currentTime = wavesurfer.getCurrentTime();
-      const regionDuration = 5; // Duration of the region
+
+      // Duration of the region
+      const regionDuration = 5;
+
+      // Calculate end time
       const endTime =
         currentTime + regionDuration <= duration
           ? currentTime + regionDuration
           : duration;
-      /*regionsPluginRef.current.addRegion({
-        id,
-        start: currentTime,
-        end: endTime,
-        color: "rgba(255, 0, 0, 0.5)",
-      });*/
+
       addBubble({
         id,
         startTime: formatTime(currentTime),
@@ -253,6 +234,7 @@ const WaveformVis = ({
     }
   };
 
+  // Play or pause the audio
   const handlePlayPause = () => {
     if (wavesurfer) {
       wavesurfer.playPause();
@@ -260,7 +242,7 @@ const WaveformVis = ({
   };
 
   return (
-    <div style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}>
+    <div style={{ padding: "20px", textAlign: "center", paddingTop: "0" }}>
       <div
         style={{ position: "relative", display: "inline-block", width: "100%" }}
       >
@@ -273,9 +255,11 @@ const WaveformVis = ({
         duration={duration}
         wavesurfer={wavesurfer}
       />
+
       <span>
         {formatTime(currentTime)} / {formatTime(duration)}
       </span>
+
       <div style={{ position: "relative" }}>
         <CommentDisplay
           wavesurfer={wavesurfer}
@@ -283,56 +267,52 @@ const WaveformVis = ({
           style={{ position: "absolute", right: 0, marginBottom: "10px" }}
         />
       </div>
+
       <div style={{ marginTop: "10px", position: "relative" }}>
-        <div />
-        <div style={{ marginTop: "10px", top: 0 }}>
-          <div>
+        <div>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handlePlayPause}
+            style={{ position: "absolute", left: 0 }}
+          >
+            {isPlaying ? "Pause" : "Play"}
+          </Button>
+          <input
+            accept="audio/*"
+            id="audio-file-input"
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <label htmlFor="audio-file-input">
             <Button
               variant="contained"
               color="primary"
-              onClick={handlePlayPause}
-              style={{ position: "absolute", left: 0 }}
+              component="span"
+              style={{ position: "absolute", right: 0 }}
             >
-              {isPlaying ? "Pause" : "Play"}
+              Upload Audio
             </Button>
-            <input
-              accept="audio/*"
-              id="audio-file-input"
-              type="file"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-            <div />
-            <label htmlFor="audio-file-input">
-              <Button
-                variant="contained"
-                color="primary"
-                component="span"
-                style={{ position: "absolute", right: 0 }}
-              >
-                Upload Audio
-              </Button>
-            </label>
-          </div>
-          <div>
-            <Button variant="contained" color="primary" onClick={markStartTime}>
-              Mark Start Time
-            </Button>
+          </label>
+        </div>
 
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={markEndTime}
-              disabled={selectedStartTime === null}
-              style={{ marginLeft: "10px", marginRight: "10px" }}
-            >
-              Mark End Time
-            </Button>
-
-            <Button variant="contained" color="primary" onClick={addRegion}>
-              Add Region
-            </Button>
-          </div>
+        <div>
+          <Button variant="contained" color="primary" onClick={markStartTime}>
+            Mark Start Time
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={markEndTime}
+            disabled={selectedStartTime === null}
+            style={{ marginLeft: "10px", marginRight: "10px" }}
+          >
+            Mark End Time
+          </Button>
+          <Button variant="contained" color="primary" onClick={addRegion}>
+            Add Region
+          </Button>
         </div>
       </div>
     </div>

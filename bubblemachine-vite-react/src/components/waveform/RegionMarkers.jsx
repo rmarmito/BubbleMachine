@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@mui/material";
-import { formatTime } from "../../helpers/utils.jsx";
+// import { formatTime } from "../../helpers/utils.jsx";
 
 const RegionMarkers = ({
   wavesurfer,
@@ -9,13 +9,8 @@ const RegionMarkers = ({
   selectedStartTime,
   selectedEndTime,
 }) => {
-  // Function to create a region based on start and end times
   const createRegion = (start, end) => {
-    if (wavesurfer.current && start !== null && end !== null) {
-      // Ensure start is less than end
-      if (start > end) [start, end] = [end, start];
-
-      // Create a new region
+    if (wavesurfer.current && start !== null && end !== null && start < end) {
       wavesurfer.current.addRegion({
         start,
         end,
@@ -24,13 +19,10 @@ const RegionMarkers = ({
         drag: false,
         resize: false,
       });
-
-      console.log("Created region:", { start, end });
     }
   };
 
-  // Call this when marking the end time to create a region
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedStartTime !== null && selectedEndTime !== null) {
       createRegion(selectedStartTime, selectedEndTime);
     }
@@ -41,7 +33,6 @@ const RegionMarkers = ({
       <Button variant="contained" color="primary" onClick={markStartTime}>
         Mark Start Time
       </Button>
-
       <Button
         variant="contained"
         color="primary"
@@ -50,15 +41,8 @@ const RegionMarkers = ({
       >
         Mark End Time
       </Button>
-
-      {selectedStartTime !== null && (
-        <div>
-          <span>Marked Start Time: {formatTime(selectedStartTime)}</span>
-          {selectedEndTime !== null && (
-            <span>, End Time: {formatTime(selectedEndTime)}</span>
-          )}
-        </div>
-      )}
     </div>
   );
 };
+
+export default RegionMarkers;

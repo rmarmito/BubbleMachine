@@ -1,12 +1,7 @@
+import React from "react";
 import { Button } from "@mui/material";
 
-const WaveformControls = ({ onFileChange, isPlaying }) => {
-  const handlePlayPause = (wavesurfer) => {
-    if (wavesurfer) {
-      wavesurfer.playPause();
-    }
-  };
-
+const WaveformControls = ({ onFileChange, isPlaying, handlePlayPause }) => {
   return (
     <div style={{ marginTop: "10px", textAlign: "center" }}>
       <input
@@ -30,7 +25,7 @@ const WaveformControls = ({ onFileChange, isPlaying }) => {
       <Button
         variant="contained"
         color="primary"
-        onClick={() => handlePlayPause(wavesurfer)}
+        onClick={handlePlayPause}
         style={{ marginRight: "10px" }}
       >
         {isPlaying ? "Pause" : "Play"}
