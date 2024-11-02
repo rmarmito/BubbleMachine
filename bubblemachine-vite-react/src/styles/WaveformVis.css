@@ -18,3 +18,11 @@
   white-space: nowrap;
   font-size: 14px;
 }
+
+#waveform {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  -moz-user-select: none; /* Firefox */
+}

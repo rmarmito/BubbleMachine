@@ -1,29 +1,28 @@
-
+import React from "react";
 
 const ProgressBar = ({ currentTime, duration, wavesurfer }) => {
   const handleProgressMouseDown = (e) => {
     seekToMousePosition(e);
-    document.addEventListener("mousemove", handleProgressMouseMove); // Add mousemove listener
-    document.addEventListener("mouseup", handleProgressMouseUp); // Add mouseup listener
+    document.addEventListener("mousemove", handleProgressMouseMove);
+    document.addEventListener("mouseup", handleProgressMouseUp);
   };
 
   const handleProgressMouseMove = (e) => {
-    seekToMousePosition(e); // Update position while dragging
+    seekToMousePosition(e);
   };
 
   const handleProgressMouseUp = () => {
-    document.removeEventListener("mousemove", handleProgressMouseMove); // Remove mousemove listener
-    document.removeEventListener("mouseup", handleProgressMouseUp); // Remove mouseup listener
+    document.removeEventListener("mousemove", handleProgressMouseMove);
+    document.removeEventListener("mouseup", handleProgressMouseUp);
   };
 
   const seekToMousePosition = (e) => {
-    if (wavesurfer.current) {
+    if (wavesurfer) {
       const progressBar = e.target;
       const rect = progressBar.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
       const ratio = offsetX / rect.width;
-
-      wavesurfer.current.seekTo(ratio); // Seek to the new position
+      wavesurfer.seekTo(ratio);
     }
   };
 
