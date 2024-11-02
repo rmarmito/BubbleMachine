@@ -9,7 +9,7 @@ import PopUpLayer from "../components/table/PopUpLayer";
 export default function HomePage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [vizWidth, setVizWidth] = useState(800);
-  const [audioFileName, setAudioFileName] = useState(""); // State for audio file name
+  const [audioFileName, setAudioFileName] = useState("");
   const [visibleStartTime, setVisibleStartTime] = useState(0);
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
@@ -19,7 +19,7 @@ export default function HomePage() {
       <PrimaryContainer
         label="Current File:"
         labelColor="white"
-        title={audioFileName || ""} // Set title to audio file name or empty string
+        title={audioFileName || ""}
         titleColor="#00FF00"
       >
         <Box
@@ -44,7 +44,7 @@ export default function HomePage() {
           setVisibleStartTime={setVisibleStartTime}
           setVisibleEndTime={setVisibleEndTime}
           selectedBubble={selectedBubble}
-          setAudioFileName={setAudioFileName} // Pass down function to update filename
+          setAudioFileName={setAudioFileName}
           sx={{ marginTop: 0 }}
         />
       </PrimaryContainer>
@@ -58,7 +58,6 @@ export default function HomePage() {
         <BubbleTable />
       </PrimaryContainer>
 
-      {/* PopUp Layers */}
       {[...Array(6)].map((_, index) => (
         <PopUpLayer key={index} layer={`${index + 1}`} />
       ))}
