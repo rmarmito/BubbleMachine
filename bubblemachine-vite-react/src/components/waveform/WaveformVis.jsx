@@ -1,19 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
-import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
 import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
 import { Button } from "@mui/material";
 import ProgressBar from "./Progressbar";
+import CommentDisplay from "../timestamped-comments/CommentDisplay.jsx";
 import {
   formatTime,
   createID,
   convertToSeconds,
   colorToRGB,
 } from "../../helpers/utils.jsx";
-import CommentDisplay from "../timestamped-comments/CommentsDisplay.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
+import throttle from "lodash/throttle";
+import debounce from "lodash/debounce";
 
 const WaveformVis = ({
   setAudioDuration,
@@ -24,21 +25,44 @@ const WaveformVis = ({
   selectedBubble,
 }) => {
   const waveformRef = useRef(null);
-  const timelineRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
   const regionsPluginRef = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(0.5);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
+
+  // Zustand store for managing bubbles
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
+  // Memoized function to render bubbles only when bubbles change
+  const renderBubbles = useCallback(
+    throttle(() => {
+      if (wavesurfer && regionsPluginRef.current) {
+        regionsPluginRef.current.clearRegions();
+        bubbles.forEach((bubble) => {
+          regionsPluginRef.current.addRegion({
+            id: bubble.id,
+            start: convertToSeconds(bubble.startTime),
+            end: convertToSeconds(bubble.stopTime),
+            color: colorToRGB(bubble.color),
+            drag: false,
+            resize: true,
+          });
+        });
+      }
+    }, 200),
+    [bubbles, wavesurfer]
+  );
+
+  // Initializing WaveSurfer with plugins, without the timeline
   useEffect(() => {
-    if (waveformRef.current && timelineRef.current) {
+    if (waveformRef.current) {
       regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
       const ws = WaveSurfer.create({
         container: waveformRef.current,
@@ -48,7 +72,6 @@ const WaveformVis = ({
         height: 128,
         plugins: [
           regionsPluginRef.current,
-          TimelinePlugin.create({ container: timelineRef.current }),
           HoverPlugin.create({
             lineColor: "#ff0000",
             lineWidth: 2,
@@ -58,7 +81,7 @@ const WaveformVis = ({
             formatTimeCallback: (seconds) => formatTime(seconds),
           }),
           ZoomPlugin.create({
-            scale: 0.5,
+            scale: zoomLevel,
             maxZoom: 1000,
             autoCenter: false,
           }),
@@ -68,9 +91,9 @@ const WaveformVis = ({
       setWavesurfer(ws);
 
       ws.on("ready", () => {
-        setDuration(ws.getDuration());
-        setAudioDuration(ws.getDuration());
-        regionsPluginRef.current.clearRegions();
+        const audioDuration = ws.getDuration();
+        setDuration(audioDuration);
+        setAudioDuration(audioDuration);
         renderBubbles();
       });
 
@@ -82,60 +105,55 @@ const WaveformVis = ({
         setCurrentTime(time);
       });
 
-      ws.on("play", () => {
-        setIsPlaying(true);
-      });
+      ws.on("play", () => setIsPlaying(true));
 
-      ws.on("pause", () => {
-        setIsPlaying(false);
-      });
+      ws.on("pause", () => setIsPlaying(false));
 
-      ws.on("scroll", (visibleStartTime, visibleEndTime) => {
-        setVisibleStartTime(formatTime(visibleStartTime));
-        setVisibleEndTime(formatTime(visibleEndTime));
-      });
+      ws.on(
+        "scroll",
+        throttle((visibleStartTime, visibleEndTime) => {
+          setVisibleStartTime(formatTime(visibleStartTime));
+          setVisibleEndTime(formatTime(visibleEndTime));
+        }, 200)
+      );
 
-      ws.on("zoom", (minPxPerSec) => {
-        const visibleDuration = waveformRef.current.clientWidth / minPxPerSec;
-        let visibleStartTime = ws.getCurrentTime() - visibleDuration / 2;
-        let visibleEndTime = ws.getCurrentTime() + visibleDuration / 2;
-
-        if (visibleStartTime < 0) {
-          visibleStartTime = 0;
-          visibleEndTime = visibleDuration;
-        }
-
-        setVisibleStartTime(formatTime(visibleStartTime));
-        setVisibleEndTime(formatTime(visibleEndTime));
-        renderBubbles();
-      });
+      ws.on(
+        "zoom",
+        debounce(() => handleZoomCheck(ws), 200)
+      );
 
       regionsPluginRef.current.on("region-updated", (region) => {
         const id = region.id;
-        const startTime = formatTime(region.start);
-        const stopTime = formatTime(region.end);
-        const values = { startTime, stopTime };
-        updateBubble(id, values);
+        updateBubble(id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
       });
 
-      return () => {
-        if (ws) {
-          ws.destroy();
-        }
-      };
+      return () => ws.destroy();
     }
-  }, []);
+  }, [zoomLevel]);
+
+  // Function to check and handle zoom rendering
+  const handleZoomCheck = (ws) => {
+    if (waveformRef.current) {
+      const rect = waveformRef.current.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        ws.zoom(zoomLevel);
+      }
+    }
+  };
 
   useEffect(() => {
-    if (wavesurfer && audioFile) {
-      wavesurfer.load(audioFile);
-    }
+    if (wavesurfer && audioFile) wavesurfer.load(audioFile);
   }, [audioFile, wavesurfer]);
 
   useEffect(() => {
     if (wavesurfer && selectedBubble) {
+      // Clear existing regions and add selected bubble's region
       regionsPluginRef.current.clearRegions();
       const { startTime, stopTime, color } = selectedBubble;
+
       regionsPluginRef.current.addRegion({
         id: selectedBubble.id,
         start: convertToSeconds(startTime),
@@ -144,24 +162,14 @@ const WaveformVis = ({
         drag: false,
         resize: true,
       });
-    }
-  }, [selectedBubble, wavesurfer]);
 
-  const renderBubbles = () => {
-    if (wavesurfer && regionsPluginRef.current) {
-      regionsPluginRef.current.clearRegions();
-      bubbles.forEach((bubble) => {
-        regionsPluginRef.current.addRegion({
-          id: bubble.id,
-          start: convertToSeconds(bubble.startTime),
-          end: convertToSeconds(bubble.stopTime),
-          color: colorToRGB(bubble.color),
-          drag: false,
-          resize: true,
-        });
-      });
+      // Set the playback to the bubble's start time and play
+      const startSeconds = convertToSeconds(startTime);
+      const seekRatio = startSeconds / duration;
+      wavesurfer.seekTo(seekRatio);
+      wavesurfer.play();
     }
-  };
+  }, [selectedBubble, wavesurfer, duration]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -173,11 +181,7 @@ const WaveformVis = ({
   };
 
   const markStartTime = () => {
-    if (wavesurfer) {
-      const time = wavesurfer.getCurrentTime();
-      setSelectedStartTime(time);
-      setSelectedEndTime(null);
-    }
+    if (wavesurfer) setSelectedStartTime(wavesurfer.getCurrentTime());
   };
 
   const markEndTime = () => {
@@ -200,28 +204,21 @@ const WaveformVis = ({
     });
   };
 
-  const addRegion = () => {
-    if (regionsPluginRef.current && wavesurfer) {
-      const id = createID();
-      const currentTime = wavesurfer.getCurrentTime();
-      const regionDuration = 5;
-      const endTime =
-        currentTime + regionDuration <= duration
-          ? currentTime + regionDuration
-          : duration;
-      addBubble({
-        id,
-        startTime: formatTime(currentTime),
-        stopTime: formatTime(endTime),
-        color: "Red",
-        layer: 1,
-      });
+  const handlePlayPause = () => {
+    if (wavesurfer) wavesurfer.playPause();
+  };
+
+  const handleRestart = () => {
+    if (wavesurfer) {
+      wavesurfer.seekTo(0);
+      setCurrentTime(0);
     }
   };
 
-  const handlePlayPause = () => {
+  const handleZoomChange = (newZoomLevel) => {
+    setZoomLevel(newZoomLevel);
     if (wavesurfer) {
-      wavesurfer.playPause();
+      wavesurfer.zoom(newZoomLevel);
     }
   };
 
@@ -231,75 +228,67 @@ const WaveformVis = ({
         style={{ position: "relative", display: "inline-block", width: "100%" }}
       >
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
-        <div id="timeline" ref={timelineRef} />
       </div>
 
+      {/* Custom progress bar with scrubbing */}
       <ProgressBar
         currentTime={currentTime}
         duration={duration}
         wavesurfer={wavesurfer}
       />
-      <span>
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </span>
-      <div style={{ position: "relative" }}>
-        <CommentDisplay
-          wavesurfer={wavesurfer}
-          currentTime={currentTime}
-          style={{ position: "absolute", right: 0, marginBottom: "10px" }}
-        />
+
+      {/* Timestamped Comment Display */}
+      <div style={{ position: "relative", marginTop: "10px" }}>
+        <CommentDisplay wavesurfer={wavesurfer} />
       </div>
-      <div style={{ marginTop: "10px", position: "relative" }}>
-        <div />
-        <div style={{ marginTop: "10px", top: 0 }}>
-          <div>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handlePlayPause}
-              style={{ position: "absolute", left: 0 }}
-            >
-              {isPlaying ? "Pause" : "Play"}
-            </Button>
-            <input
-              accept="audio/*"
-              id="audio-file-input"
-              type="file"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-            <div />
-            <label htmlFor="audio-file-input">
-              <Button
-                variant="contained"
-                color="primary"
-                component="span"
-                style={{ position: "absolute", right: 0 }}
-              >
-                Upload Audio
-              </Button>
-            </label>
-          </div>
-          <div>
-            <Button variant="contained" color="primary" onClick={markStartTime}>
-              Mark Start Time
-            </Button>
 
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={markEndTime}
-              disabled={selectedStartTime === null}
-              style={{ marginLeft: "10px", marginRight: "10px" }}
-            >
-              Mark End Time
-            </Button>
-
-            <Button variant="contained" color="primary" onClick={addRegion}>
-              Add Region
-            </Button>
-          </div>
-        </div>
+      {/* Audio and Zoom controls */}
+      <div style={{ marginTop: "10px" }}>
+        <Button variant="contained" color="primary" onClick={handlePlayPause}>
+          {isPlaying ? "Pause" : "Play"}
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleRestart}
+          style={{ marginLeft: "10px" }}
+        >
+          Start from Beginning
+        </Button>
+        <input
+          accept="audio/*"
+          id="audio-file-input"
+          type="file"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+        <label htmlFor="audio-file-input">
+          <Button
+            variant="contained"
+            color="primary"
+            component="span"
+            style={{ marginLeft: "10px" }}
+          >
+            Upload Audio
+          </Button>
+        </label>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={markStartTime}
+          style={{ marginLeft: "10px" }}
+        >
+          Mark Start Time
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={markEndTime}
+          disabled={selectedStartTime === null}
+          style={{ marginLeft: "10px" }}
+        >
+          Mark End Time
+        </Button>
       </div>
     </div>
   );
