@@ -8,33 +8,13 @@ const RegionMarkers = ({
   markEndTime,
   selectedStartTime,
   selectedEndTime,
+  createRegion,
 }) => {
-  // Function to create a region based on start and end times
-  const createRegion = (start, end) => {
-    if (wavesurfer.current && start !== null && end !== null) {
-      // Ensure start is less than end
-      if (start > end) [start, end] = [end, start];
-
-      // Create a new region
-      wavesurfer.current.addRegion({
-        start,
-        end,
-        loop: true,
-        color: "rgba(0,123,255,0.5)",
-        drag: false,
-        resize: false,
-      });
-
-      console.log("Created region:", { start, end });
-    }
-  };
-
-  // Call this when marking the end time to create a region
   React.useEffect(() => {
     if (selectedStartTime !== null && selectedEndTime !== null) {
       createRegion(selectedStartTime, selectedEndTime);
     }
-  }, [selectedStartTime, selectedEndTime]);
+  }, [selectedStartTime, selectedEndTime, createRegion]);
 
   return (
     <div style={{ marginTop: "10px", textAlign: "center" }}>
@@ -62,3 +42,5 @@ const RegionMarkers = ({
     </div>
   );
 };
+
+export default RegionMarkers;
