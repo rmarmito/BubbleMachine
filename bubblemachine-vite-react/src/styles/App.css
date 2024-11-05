@@ -1,16 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-#zoomview-container,
-#overview-container {
-  width: 1000px;
-  height: 100px;
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
-
-/* Existing styles */
-
 /* Animation Keyframes */
 @keyframes pulse {
   0% {

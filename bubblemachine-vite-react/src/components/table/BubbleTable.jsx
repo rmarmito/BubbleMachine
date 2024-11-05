@@ -1,13 +1,62 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  Tooltip,
+  Popper,
+  ClickAwayListener,
+} from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { ChromePicker } from "react-color";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
-import { createID } from "../../helpers/utils.jsx";
+import { createID, generateRandomColor } from "../../helpers/utils.jsx";
+
+// ColorPickerCell component defined within BubbleTable
+const ColorPickerCell = ({ value, onChange }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const anchorRef = useRef(null);
+
+  return (
+    <Box sx={{ position: "relative" }}>
+      <Box
+        ref={anchorRef}
+        onClick={() => setShowPicker(!showPicker)}
+        sx={{
+          width: "36px",
+          height: "24px",
+          backgroundColor: value || "#fff",
+          cursor: "pointer",
+          border: "2px solid #fff",
+          boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+          borderRadius: "2px",
+        }}
+      />
+      <Popper
+        open={showPicker}
+        anchorEl={anchorRef.current}
+        placement="right-start"
+        style={{ zIndex: 9999 }}
+      >
+        <ClickAwayListener onClickAway={() => setShowPicker(false)}>
+          <div>
+            <ChromePicker
+              color={value || "#fff"}
+              onChange={(color) => {
+                onChange(color.hex);
+              }}
+            />
+          </div>
+        </ClickAwayListener>
+      </Popper>
+    </Box>
+  );
+};
 
 const BubbleTable = () => {
   const [validationErrors, setValidationErrors] = useState({});
@@ -18,12 +67,6 @@ const BubbleTable = () => {
 
   const columns = useMemo(
     () => [
-      {
-        accessorKey: "id",
-        header: "Id",
-        enableEditing: false,
-        size: 80,
-      },
       {
         accessorKey: "layer",
         header: "Layer",
@@ -80,26 +123,31 @@ const BubbleTable = () => {
       {
         accessorKey: "color",
         header: "Color",
-        editVariant: "select",
-        editSelectOptions: [
-          "Red",
-          "Blue",
-          "Green",
-          "Yellow",
-          "Purple",
-          "Orange",
-          "Pink",
-          "Brown",
-          "Gray",
-        ],
-        muiEditTextFieldProps: {
-          select: true,
-          error: !!validationErrors?.color,
-          helperText: validationErrors?.color,
-        },
+        Cell: ({ cell, row }) => (
+          <ColorPickerCell
+            value={cell.getValue()}
+            onChange={(newColor) => {
+              updateBubble(row.original.id, {
+                ...row.original,
+                color: newColor,
+              });
+            }}
+          />
+        ),
+        Edit: ({ cell, column, row }) => (
+          <ColorPickerCell
+            value={cell.getValue()}
+            onChange={(newColor) => {
+              row.setEditingRow({
+                ...row._valuesCache,
+                [column.id]: newColor,
+              });
+            }}
+          />
+        ),
       },
     ],
-    [validationErrors]
+    [validationErrors, updateBubble]
   );
 
   const handleCreateBubble = async ({ values, table }) => {
@@ -109,11 +157,11 @@ const BubbleTable = () => {
       return;
     }
     values.id = createID();
+    values.color = generateRandomColor(); // Generate random color for new bubbles
     setValidationErrors({});
     addBubble({ ...values });
     table.setCreatingRow(null);
   };
-
   const handleSaveBubble = async ({ values, table }) => {
     const newValidationErrors = validateBubble(values);
     if (Object.values(newValidationErrors).some((error) => error)) {

@@ -64,3 +64,30 @@ export function colorToRGB(color) {
 
   return colors[color] || color; // Return the hex code if found, otherwise return the original color
 }
+
+export const generateRandomColor = () => {
+  const colors = [
+    "#FF6B6B", // Red
+    "#4ECDC4", // Teal
+    "#45B7D1", // Light Blue
+    "#96CEB4", // Sage Green
+    "#D4A5A5", // Dusty Rose
+    "#9B89B3", // Purple
+    "#FFD93D", // Yellow
+    "#FF8C42", // Orange
+    "#98DDCA", // Mint
+  ];
+
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
+// Add alpha channel to color
+export const addTransparency = (color, alpha) => {
+  if (color.startsWith("#")) {
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return color;
+};

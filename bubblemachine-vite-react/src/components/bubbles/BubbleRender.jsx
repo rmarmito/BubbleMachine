@@ -1,6 +1,9 @@
 import React from "react";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
-import { convertToMilliseconds, colorToHex } from "../../helpers/utils.jsx";
+import {
+  convertToMilliseconds,
+  addTransparency,
+} from "../../helpers/utils.jsx";
 
 const BubbleRender = ({
   audioDuration = 0,
@@ -12,7 +15,6 @@ const BubbleRender = ({
   const bubbleData = useBubbleStore((state) => state.bubbles);
   const visStartMs = convertToMilliseconds(visibleStartTime);
   const visStopMs = convertToMilliseconds(visibleEndTime);
-
   const handleClick = (bubble) => setSelectedBubble(bubble);
 
   return (
@@ -20,6 +22,7 @@ const BubbleRender = ({
       {bubbleData.map((bubbleData, index) => {
         const startTime = convertToMilliseconds(bubbleData.startTime);
         const stopTime = convertToMilliseconds(bubbleData.stopTime);
+
         if (startTime > visStopMs || stopTime < visStartMs) return null;
 
         const visibleDuration = visStopMs - visStartMs;
@@ -32,7 +35,9 @@ const BubbleRender = ({
             ((stopTime - visStartMs) / visibleDuration) * vizWidth
           ) + 20;
         const bubbleWidth = endPosition - startPosition;
-        const bubbleColor = colorToHex(bubbleData.color);
+
+        // Add transparency to the bubble color
+        const bubbleColor = addTransparency(bubbleData.color, 0.6);
         const bubbleHeight = bubbleData.layer * 50;
         const bubbleLevel = 6 - bubbleData.layer;
 
@@ -46,14 +51,29 @@ const BubbleRender = ({
           position: "absolute",
           borderTopLeftRadius: "80%",
           borderTopRightRadius: "80%",
+          transition: "all 0.3s ease",
+          cursor: "pointer",
+        };
+
+        const hoverStyle = {
+          ...divStyle,
+          backgroundColor: addTransparency(bubbleData.color, 0.8),
+          transform: "scale(1.02)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         };
 
         return (
           <div
             key={index}
             style={divStyle}
+            onMouseEnter={(e) => {
+              Object.assign(e.target.style, hoverStyle);
+            }}
+            onMouseLeave={(e) => {
+              Object.assign(e.target.style, divStyle);
+            }}
             onClick={() => handleClick(bubbleData)}
-          ></div>
+          />
         );
       })}
     </div>

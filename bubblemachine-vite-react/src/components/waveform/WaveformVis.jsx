@@ -40,6 +40,17 @@ const WaveformVis = ({
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
+  const createHoverColor = (color) => {
+    // Convert hex to rgba with 0.3 opacity
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+    if (result) {
+      const r = parseInt(result[1], 16);
+      const g = parseInt(result[2], 16);
+      const b = parseInt(result[3], 16);
+      return `rgba(${r}, ${g}, ${b}, 0.3)`;
+    }
+    return "rgba(0, 0, 0, 0.3)"; // fallback
+  };
   // Memoized function to render bubbles only when bubbles change
   const renderBubbles = useCallback(
     throttle(() => {
@@ -73,12 +84,13 @@ const WaveformVis = ({
         plugins: [
           regionsPluginRef.current,
           HoverPlugin.create({
-            lineColor: "#ff0000",
+            lineColor: createHoverColor("#4E9EE7"), // Use your brand color or any base color
             lineWidth: 2,
             labelBackground: "#555",
             labelColor: "#fff",
             labelSize: "11px",
             formatTimeCallback: (seconds) => formatTime(seconds),
+            opacity: 0.3, // Add opacity option
           }),
           ZoomPlugin.create({
             scale: zoomLevel,
