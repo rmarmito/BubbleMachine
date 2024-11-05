@@ -4,9 +4,9 @@ import logo from "../assets/BubbleMachine_Transparent.png";
 
 const loadingMessages = [
   "Warming up the bubbles...",
-  "Calibrating audio waves...",
-  "Preparing your workspace...",
-  "Loading sound particles...",
+  "Calibrating wave surfer...",
+  "Preparing the machine...",
+  "Getting off the wiggly path...",
   "Almost there...",
 ];
 
