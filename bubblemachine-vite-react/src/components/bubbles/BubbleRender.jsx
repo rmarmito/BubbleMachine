@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import {
   convertToMilliseconds,
@@ -11,21 +11,38 @@ const BubbleRender = ({
   visibleStartTime = 0,
   visibleEndTime = audioDuration,
   setSelectedBubble,
+  isAudioLoaded = false, // Add this prop
 }) => {
   const bubbleData = useBubbleStore((state) => state.bubbles);
-  const visStartMs = convertToMilliseconds(visibleStartTime);
-  const visStopMs = convertToMilliseconds(visibleEndTime);
-  const handleClick = (bubble) => setSelectedBubble(bubble);
+  const containerRef = useRef(null);
+  const [hoveredBubble, setHoveredBubble] = useState(null);
+
+  const visStartMs = convertToMilliseconds(visibleStartTime) || 0;
+  const visStopMs = convertToMilliseconds(visibleEndTime) || audioDuration;
+
+  // Custom cursor style based on audio loaded state
+  const cursorStyle = isAudioLoaded ? "pointer" : "not-allowed";
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "200px" }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "200px",
+        cursor: cursorStyle,
+      }}
+    >
       {bubbleData.map((bubbleData, index) => {
-        const startTime = convertToMilliseconds(bubbleData.startTime);
-        const stopTime = convertToMilliseconds(bubbleData.stopTime);
+        if (!bubbleData?.startTime || !bubbleData?.stopTime) return null;
 
+        const startTime = convertToMilliseconds(bubbleData.startTime) || 0;
+        const stopTime = convertToMilliseconds(bubbleData.stopTime) || 0;
+
+        if (startTime === 0 || stopTime === 0) return null;
         if (startTime > visStopMs || stopTime < visStartMs) return null;
 
-        const visibleDuration = visStopMs - visStartMs;
+        const visibleDuration = Math.max(1, visStopMs - visStartMs);
         const startPosition =
           Math.max(0, ((startTime - visStartMs) / visibleDuration) * vizWidth) +
           20;
@@ -34,16 +51,16 @@ const BubbleRender = ({
             vizWidth,
             ((stopTime - visStartMs) / visibleDuration) * vizWidth
           ) + 20;
-        const bubbleWidth = endPosition - startPosition;
+        const bubbleWidth = Math.max(0, endPosition - startPosition);
 
-        // Add transparency to the bubble color
-        const bubbleColor = addTransparency(bubbleData.color, 0.6);
-        const bubbleHeight = bubbleData.layer * 50;
-        const bubbleLevel = 6 - bubbleData.layer;
+        // Use the actual layer value from the bubble data
+        const layer = parseInt(bubbleData.layer) || 1;
+        const bubbleHeight = layer * 50;
+        const bubbleLevel = 6 - layer;
 
         const divStyle = {
           bottom: 0,
-          backgroundColor: bubbleColor,
+          backgroundColor: addTransparency(bubbleData.color || "#4E9EE7", 0.6),
           left: `${startPosition}px`,
           width: `${bubbleWidth}px`,
           height: `${bubbleHeight}px`,
@@ -52,27 +69,28 @@ const BubbleRender = ({
           borderTopLeftRadius: "80%",
           borderTopRightRadius: "80%",
           transition: "all 0.3s ease",
-          cursor: "pointer",
-        };
-
-        const hoverStyle = {
-          ...divStyle,
-          backgroundColor: addTransparency(bubbleData.color, 0.8),
-          transform: "scale(1.02)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          cursor: isAudioLoaded ? "pointer" : "not-allowed",
+          opacity: hoveredBubble === bubbleData.id ? 0.8 : 1,
         };
 
         return (
           <div
-            key={index}
+            key={bubbleData.id || index}
             style={divStyle}
-            onMouseEnter={(e) => {
-              Object.assign(e.target.style, hoverStyle);
+            onMouseEnter={() => {
+              setHoveredBubble(bubbleData.id);
+              if (isAudioLoaded) {
+                // Add hover effect
+              }
             }}
-            onMouseLeave={(e) => {
-              Object.assign(e.target.style, divStyle);
+            onMouseLeave={() => {
+              setHoveredBubble(null);
             }}
-            onClick={() => handleClick(bubbleData)}
+            onClick={() => {
+              if (isAudioLoaded && setSelectedBubble) {
+                setSelectedBubble(bubbleData);
+              }
+            }}
           />
         );
       })}

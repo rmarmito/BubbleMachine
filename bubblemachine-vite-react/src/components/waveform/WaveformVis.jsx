@@ -23,10 +23,12 @@ const WaveformVis = ({
   setVisibleStartTime,
   setVisibleEndTime,
   selectedBubble,
+  setIsAudioLoaded,
 }) => {
   const waveformRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
   const regionsPluginRef = useRef(null);
+  const hoverPluginRef = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,23 +37,12 @@ const WaveformVis = ({
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
 
-  // Zustand store for managing bubbles
+  // Zustand store
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
-  const createHoverColor = (color) => {
-    // Convert hex to rgba with 0.3 opacity
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
-    if (result) {
-      const r = parseInt(result[1], 16);
-      const g = parseInt(result[2], 16);
-      const b = parseInt(result[3], 16);
-      return `rgba(${r}, ${g}, ${b}, 0.3)`;
-    }
-    return "rgba(0, 0, 0, 0.3)"; // fallback
-  };
-  // Memoized function to render bubbles only when bubbles change
+  // Memoized render bubbles function
   const renderBubbles = useCallback(
     throttle(() => {
       if (wavesurfer && regionsPluginRef.current) {
@@ -61,7 +52,7 @@ const WaveformVis = ({
             id: bubble.id,
             start: convertToSeconds(bubble.startTime),
             end: convertToSeconds(bubble.stopTime),
-            color: colorToRGB(bubble.color),
+            color: colorToRGB(bubble.color, 0.3),
             drag: false,
             resize: true,
           });
@@ -71,10 +62,29 @@ const WaveformVis = ({
     [bubbles, wavesurfer]
   );
 
-  // Initializing WaveSurfer with plugins, without the timeline
+  // Initialize WaveSurfer
   useEffect(() => {
-    if (waveformRef.current) {
-      regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
+    if (waveformRef.current && audioFile) {
+      // Clean up the previous WaveSurfer instance
+      if (wavesurfer) {
+        wavesurfer.destroy();
+      }
+
+      // Initialize plugins
+      regionsPluginRef.current = RegionsPlugin.create({
+        dragSelection: false,
+      });
+
+      hoverPluginRef.current = HoverPlugin.create({
+        lineColor: "#4E9EE7", // Your brand blue
+        lineWidth: 2,
+        labelBackground: "#555",
+        labelColor: "#fff",
+        labelSize: "11px",
+        formatTimeCallback: formatTime,
+        opacity: 0.2, // Start with hover visible
+      });
+
       const ws = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#ddd",
@@ -83,15 +93,7 @@ const WaveformVis = ({
         height: 128,
         plugins: [
           regionsPluginRef.current,
-          HoverPlugin.create({
-            lineColor: createHoverColor("#4E9EE7"), // Use your brand color or any base color
-            lineWidth: 2,
-            labelBackground: "#555",
-            labelColor: "#fff",
-            labelSize: "11px",
-            formatTimeCallback: (seconds) => formatTime(seconds),
-            opacity: 0.3, // Add opacity option
-          }),
+          hoverPluginRef.current,
           ZoomPlugin.create({
             scale: zoomLevel,
             maxZoom: 1000,
@@ -100,12 +102,26 @@ const WaveformVis = ({
         ],
       });
 
+      // Set the wavesurfer state before adding event listeners
       setWavesurfer(ws);
 
+      // Attach event listeners to the regions plugin
+      regionsPluginRef.current.on("region-updated", (region) => {
+        updateBubble(region.id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
+      });
+
+      // Load the audio file
+      ws.load(audioFile);
+
+      // Event listeners
       ws.on("ready", () => {
         const audioDuration = ws.getDuration();
         setDuration(audioDuration);
         setAudioDuration(audioDuration);
+        setIsAudioLoaded(true);
         renderBubbles();
       });
 
@@ -118,7 +134,6 @@ const WaveformVis = ({
       });
 
       ws.on("play", () => setIsPlaying(true));
-
       ws.on("pause", () => setIsPlaying(false));
 
       ws.on(
@@ -134,51 +149,18 @@ const WaveformVis = ({
         debounce(() => handleZoomCheck(ws), 200)
       );
 
-      regionsPluginRef.current.on("region-updated", (region) => {
-        const id = region.id;
-        updateBubble(id, {
-          startTime: formatTime(region.start),
-          stopTime: formatTime(region.end),
-        });
-      });
-
-      return () => ws.destroy();
+      return () => {
+        ws.destroy();
+        setIsAudioLoaded(false);
+      };
     }
-  }, [zoomLevel]);
+  }, [audioFile, zoomLevel]);
 
-  // Function to check and handle zoom rendering
-  const handleZoomCheck = (ws) => {
-    if (waveformRef.current) {
-      const rect = waveformRef.current.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > window.innerHeight) {
-        ws.zoom(zoomLevel);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (wavesurfer && audioFile) wavesurfer.load(audioFile);
-  }, [audioFile, wavesurfer]);
-
+  // Handle selected bubble
   useEffect(() => {
     if (wavesurfer && selectedBubble) {
-      // Clear existing regions and add selected bubble's region
-      regionsPluginRef.current.clearRegions();
-      const { startTime, stopTime, color } = selectedBubble;
-
-      regionsPluginRef.current.addRegion({
-        id: selectedBubble.id,
-        start: convertToSeconds(startTime),
-        end: convertToSeconds(stopTime),
-        color: colorToRGB(color),
-        drag: false,
-        resize: true,
-      });
-
-      // Set the playback to the bubble's start time and play
-      const startSeconds = convertToSeconds(startTime);
-      const seekRatio = startSeconds / duration;
-      wavesurfer.seekTo(seekRatio);
+      const startSeconds = convertToSeconds(selectedBubble.startTime);
+      wavesurfer.seekTo(startSeconds / duration);
       wavesurfer.play();
     }
   }, [selectedBubble, wavesurfer, duration]);
@@ -189,6 +171,26 @@ const WaveformVis = ({
       const fileUrl = URL.createObjectURL(file);
       setAudioFile(fileUrl);
       setAudioFileName(file.name);
+    }
+  };
+
+  const handleZoomCheck = useCallback(
+    (ws) => {
+      if (waveformRef.current) {
+        const rect = waveformRef.current.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          ws.zoom(zoomLevel);
+        }
+      }
+    },
+    [zoomLevel]
+  );
+
+  const handlePlayPause = () => wavesurfer?.playPause();
+  const handleRestart = () => {
+    if (wavesurfer) {
+      wavesurfer.seekTo(0);
+      setCurrentTime(0);
     }
   };
 
@@ -211,27 +213,9 @@ const WaveformVis = ({
       id,
       startTime: formatTime(start),
       stopTime: formatTime(end),
-      color: "Blue",
-      layer: 1,
+      color: "#4E9EE7",
+      layer: "1",
     });
-  };
-
-  const handlePlayPause = () => {
-    if (wavesurfer) wavesurfer.playPause();
-  };
-
-  const handleRestart = () => {
-    if (wavesurfer) {
-      wavesurfer.seekTo(0);
-      setCurrentTime(0);
-    }
-  };
-
-  const handleZoomChange = (newZoomLevel) => {
-    setZoomLevel(newZoomLevel);
-    if (wavesurfer) {
-      wavesurfer.zoom(newZoomLevel);
-    }
   };
 
   return (
@@ -242,19 +226,16 @@ const WaveformVis = ({
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
       </div>
 
-      {/* Custom progress bar with scrubbing */}
       <ProgressBar
         currentTime={currentTime}
         duration={duration}
         wavesurfer={wavesurfer}
       />
 
-      {/* Timestamped Comment Display */}
       <div style={{ position: "relative", marginTop: "10px" }}>
         <CommentDisplay wavesurfer={wavesurfer} />
       </div>
 
-      {/* Audio and Zoom controls */}
       <div style={{ marginTop: "10px" }}>
         <Button variant="contained" color="primary" onClick={handlePlayPause}>
           {isPlaying ? "Pause" : "Play"}

@@ -13,6 +13,7 @@ export default function HomePage() {
   const [visibleStartTime, setVisibleStartTime] = useState(0);
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false); // Add this state
 
   return (
     <div>
@@ -36,6 +37,7 @@ export default function HomePage() {
             visibleStartTime={visibleStartTime}
             visibleEndTime={visibleEndTime}
             setSelectedBubble={setSelectedBubble}
+            isAudioLoaded={isAudioLoaded}
           />
         </Box>
         <WaveformVis
@@ -45,6 +47,7 @@ export default function HomePage() {
           setVisibleEndTime={setVisibleEndTime}
           selectedBubble={selectedBubble}
           setAudioFileName={setAudioFileName}
+          setIsAudioLoaded={setIsAudioLoaded} // Pass this prop
           sx={{ marginTop: 0 }}
         />
       </PrimaryContainer>
@@ -55,7 +58,8 @@ export default function HomePage() {
         title=""
         titleColor="#FF0000"
       >
-        <BubbleTable />
+        <BubbleTable isAudioLoaded={isAudioLoaded} />{" "}
+        {/* Optionally pass to BubbleTable */}
       </PrimaryContainer>
 
       {[...Array(6)].map((_, index) => (

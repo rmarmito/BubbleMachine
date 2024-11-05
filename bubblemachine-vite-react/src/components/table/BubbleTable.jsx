@@ -1,62 +1,14 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import {
-  Box,
-  Button,
-  IconButton,
-  Tooltip,
-  Popper,
-  ClickAwayListener,
-} from "@mui/material";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { ChromePicker } from "react-color";
+import ColorPickerCell from "./ColorPickerCell"; // Update import
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { createID, generateRandomColor } from "../../helpers/utils.jsx";
-
-// ColorPickerCell component defined within BubbleTable
-const ColorPickerCell = ({ value, onChange }) => {
-  const [showPicker, setShowPicker] = useState(false);
-  const anchorRef = useRef(null);
-
-  return (
-    <Box sx={{ position: "relative" }}>
-      <Box
-        ref={anchorRef}
-        onClick={() => setShowPicker(!showPicker)}
-        sx={{
-          width: "36px",
-          height: "24px",
-          backgroundColor: value || "#fff",
-          cursor: "pointer",
-          border: "2px solid #fff",
-          boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          borderRadius: "2px",
-        }}
-      />
-      <Popper
-        open={showPicker}
-        anchorEl={anchorRef.current}
-        placement="right-start"
-        style={{ zIndex: 9999 }}
-      >
-        <ClickAwayListener onClickAway={() => setShowPicker(false)}>
-          <div>
-            <ChromePicker
-              color={value || "#fff"}
-              onChange={(color) => {
-                onChange(color.hex);
-              }}
-            />
-          </div>
-        </ClickAwayListener>
-      </Popper>
-    </Box>
-  );
-};
 
 const BubbleTable = () => {
   const [validationErrors, setValidationErrors] = useState({});
@@ -76,6 +28,16 @@ const BubbleTable = () => {
           select: true,
           error: !!validationErrors?.layer,
           helperText: validationErrors?.layer,
+          onChange: (event) => {
+            const newValue = event.target.value;
+            // If inside editing row
+            if (table.getState().editingRow) {
+              table.setEditingRow({
+                ...table.getState().editingRow,
+                layer: newValue,
+              });
+            }
+          },
         },
       },
       {
@@ -156,10 +118,16 @@ const BubbleTable = () => {
       setValidationErrors(newValidationErrors);
       return;
     }
-    values.id = createID();
-    values.color = generateRandomColor(); // Generate random color for new bubbles
+
+    const newBubble = {
+      ...values,
+      id: createID(),
+      layer: values.layer || "1", // Ensure layer is set
+      color: generateRandomColor(),
+    };
+
     setValidationErrors({});
-    addBubble({ ...values });
+    addBubble(newBubble);
     table.setCreatingRow(null);
   };
   const handleSaveBubble = async ({ values, table }) => {
