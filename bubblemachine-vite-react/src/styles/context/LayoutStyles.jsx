@@ -1,24 +1,32 @@
 export const headerStyles = {
   appBar: (darkMode) => ({
     backgroundImage: "none",
-    backgroundColor: darkMode ? "#1A1A2E" : "#2C3E50", // Deep, professional color
+    backgroundColor: darkMode ? "#1A1A2E" : "#2C3E50",
     boxShadow: "none",
     borderBottom: `1px solid ${darkMode ? "#2A2A3E" : "#34495E"}`,
     position: "fixed",
   }),
-  bubble: {
+  musicNote: {
     position: "absolute",
-    borderRadius: "50%",
     pointerEvents: "none",
-    animation: "float 5s infinite",
+    animation: "float 8s infinite linear",
     opacity: 0.1,
-    background: "radial-gradient(circle at 30% 30%, #ffffff, transparent)",
+    color: "#4E9EE7", // Updated blue
+    fontSize: "24px",
   },
   toolbar: {
     justifyContent: "space-between",
     minHeight: "64px",
     position: "relative",
     overflow: "hidden",
+  },
+  iconButton: {
+    color: "#fff",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      backgroundColor: "rgba(78, 158, 231, 0.2)", // Updated blue with transparency
+    },
   },
   logoContainer: {
     display: "flex",
@@ -31,7 +39,7 @@ export const headerStyles = {
     height: "45px",
     width: "auto",
     marginRight: "10px",
-    filter: "drop-shadow(0 0 4px rgba(255,255,255,0.2))",
+    filter: "drop-shadow(0 0 4px rgba(78, 158, 231, 0.3))", // Updated blue shadow
     transition: "all 0.3s ease",
     "&:hover": {
       transform: "scale(1.05) rotate(-5deg)",
@@ -40,7 +48,9 @@ export const headerStyles = {
   brandText: (darkMode) => ({
     fontFamily: "Coiny, cursive",
     fontSize: "38px",
-    background: "linear-gradient(45deg, #E3F2FD, #90CAF9)",
+    background: `linear-gradient(45deg, #4E9EE7, ${
+      darkMode ? "#90CAF9" : "#76B7ED"
+    })`, // Updated blue
     backgroundClip: "text",
     WebkitBackgroundClip: "text",
     color: "transparent",
@@ -49,69 +59,45 @@ export const headerStyles = {
       : "1px 1px 2px rgba(0,0,0,0.3)",
     position: "relative",
   }),
-  navContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: 1,
-    zIndex: 1,
-  },
-  iconButton: {
-    color: "#fff",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      transform: "translateY(-2px)",
-      backgroundColor: "rgba(255,255,255,0.1)",
-    },
-  },
-  "@keyframes float": {
-    "0%, 100%": {
-      transform: "translateY(0) scale(1)",
-    },
-    "50%": {
-      transform: "translateY(-20px) scale(1.1)",
-    },
-  },
 };
+
 export const footerStyles = {
-  container: {
+  wrapper: (darkMode) => ({
     position: "relative",
     marginTop: "auto",
+    backgroundColor: darkMode ? "#1A1A2E" : "#2C3E50",
+    borderTop: `1px solid ${darkMode ? "#2A2A3E" : "#34495E"}`,
     overflow: "hidden",
+    padding: "2rem 0",
+  }),
+  noteAnimation: {
+    "@keyframes floatUpward": {
+      "0%": {
+        transform: "translateY(0) rotate(0deg)",
+        opacity: 0,
+      },
+      "50%": {
+        opacity: 0.1,
+      },
+      "100%": {
+        transform: "translateY(-100px) rotate(360deg)",
+        opacity: 0,
+      },
+    },
   },
-  wave: {
+  musicNote: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "60px",
-    overflow: "hidden",
-    lineHeight: 0,
-    transform: "rotate(180deg)",
-  },
-  content: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    py: 3,
-    px: 2,
-    position: "relative",
-    zIndex: 1,
-  },
-  innerContent: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 1,
+    color: "#4E9EE7",
+    opacity: 0.1,
+    animation: "floatUpward 10s infinite linear",
   },
   waveContainer: {
     display: "flex",
-    gap: 0.5,
-    mb: 1,
+    justifyContent: "center",
+    gap: "4px",
+    marginBottom: "1.5rem",
   },
-  waveBar: {
-    width: "3px",
-    height: "15px",
-    animation: "waveAnimation 1s ease-in-out infinite",
+  wave: {
     "@keyframes waveAnimation": {
       "0%, 100%": {
         transform: "scaleY(0.5)",
@@ -121,36 +107,218 @@ export const footerStyles = {
       },
     },
   },
-  musicNote: {
-    display: "inline-block",
-    animation: "pulse 1.5s ease infinite",
+  waveBar: {
+    width: "3px",
+    height: "15px",
+    backgroundColor: "#4E9EE7",
+    animation: "waveAnimation 1s ease-in-out infinite",
+  },
+  content: {
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "0.5rem",
+    color: "white",
+    zIndex: 1,
+  },
+  gradientText: (darkMode) => ({
+    textAlign: "center",
+    background: `linear-gradient(45deg, #4E9EE7, ${
+      darkMode ? "#90CAF9" : "#76B7ED"
+    })`,
+    backgroundClip: "text",
+    WebkitBackgroundClip: "text",
+    color: "transparent",
+    fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  }),
+  pulsingNote: {
     "@keyframes pulse": {
-      "0%": {
+      "0%, 100%": {
         transform: "scale(1)",
       },
       "50%": {
         transform: "scale(1.2)",
       },
-      "100%": {
-        transform: "scale(1)",
+    },
+    display: "inline-block",
+    color: "#4E9EE7",
+    animation: "pulse 1.5s ease infinite",
+  },
+  copyright: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontWeight: 300,
+    textAlign: "center",
+    fontSize: "0.875rem",
+  },
+  gradient: (darkMode) => ({
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+    background: `linear-gradient(to top, ${
+      darkMode ? "#1A1A2E" : "#2C3E50"
+    }, transparent)`,
+    pointerEvents: "none",
+  }),
+};
+export const containerStyles = {
+  paper: (darkMode, isHovered) => ({
+    margin: 2,
+    borderRadius: "12px",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    border: "1px solid",
+    borderColor: darkMode
+      ? isHovered
+        ? "rgba(78, 158, 231, 0.5)"
+        : "#2A2A3E"
+      : isHovered
+      ? "rgba(78, 158, 231, 0.3)"
+      : "rgba(0, 0, 0, 0.12)",
+    backgroundColor: darkMode ? "#1E1E2E" : "#FFFFFF",
+    position: "relative",
+    overflow: "hidden",
+    boxShadow: isHovered
+      ? "0 8px 32px rgba(78, 158, 231, 0.2)"
+      : "0 2px 4px rgba(0, 0, 0, 0.05)",
+    transform: isHovered ? "translateY(-4px)" : "translateY(0)",
+  }),
+
+  header: {
+    display: "flex",
+    alignItems: "center",
+    backgroundColor: "#2C3E50",
+    color: "white",
+    borderTopLeftRadius: "12px",
+    borderTopRightRadius: "12px",
+    padding: "16px 20px",
+    transition: "all 0.3s ease",
+  },
+
+  headerTitle: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    gap: 2,
+  },
+
+  audioFileName: {
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    "& .icon": {
+      color: "#4E9EE7",
+      opacity: 0.9,
+    },
+    "& .name": {
+      fontWeight: 500,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      maxWidth: "300px",
+    },
+    "& .extension": {
+      opacity: 0.7,
+      fontWeight: 400,
+    },
+  },
+
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+  },
+
+  expandButton: {
+    color: "white",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      backgroundColor: "rgba(78, 158, 231, 0.2)",
+      transform: "scale(1.1)",
+    },
+  },
+
+  content: {
+    padding: 3,
+    transition: "background-color 0.3s ease",
+    backgroundColor: "transparent",
+  },
+
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+
+  loadingAnimation: {
+    display: "flex",
+    alignItems: "center",
+    gap: "3px",
+    "& .bar": {
+      width: "3px",
+      height: "15px",
+      backgroundColor: "#4E9EE7",
+      borderRadius: "3px",
+      animation: "loadingWave 1s ease-in-out infinite",
+    },
+    "@keyframes loadingWave": {
+      "0%, 100%": {
+        transform: "scaleY(0.5)",
+      },
+      "50%": {
+        transform: "scaleY(1)",
       },
     },
   },
 };
 
-export const containerStyles = {
-  paper: (darkMode) => ({
-    backgroundColor: darkMode ? "#1A1A2E" : "#FFFFFF",
-    borderRadius: "12px",
-    overflow: "hidden",
-    border: `1px solid ${darkMode ? "#2A2A3E" : "#E0E0E0"}`,
-    boxShadow: darkMode
-      ? "0 4px 20px rgba(0,0,0,0.2)"
-      : "0 4px 20px rgba(0,0,0,0.05)",
+export const appStyles = {
+  mainContainer: (darkMode) => ({
+    minHeight: "100vh",
+    backgroundColor: darkMode ? "#141422" : "#F8FAFC",
+    backgroundImage: darkMode
+      ? `
+        radial-gradient(circle at 10% 20%, rgba(78, 158, 231, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 50%, rgba(78, 158, 231, 0.02) 0%, transparent 20%),
+        radial-gradient(circle at 30% 80%, rgba(78, 158, 231, 0.03) 0%, transparent 20%)
+      `
+      : `
+        radial-gradient(circle at 10% 20%, rgba(44, 62, 80, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 50%, rgba(78, 158, 231, 0.02) 0%, transparent 20%),
+        radial-gradient(circle at 30% 80%, rgba(44, 62, 80, 0.03) 0%, transparent 20%)
+      `,
+    backgroundSize: "100% 100%",
+    backgroundAttachment: "fixed",
+    transition: "background-color 0.3s ease",
   }),
-  header: (darkMode) => ({
-    backgroundColor: darkMode ? "#2C3E50" : "#34495E",
-    padding: "16px",
-    color: "#FFFFFF",
-  }),
+
+  contentWrapper: {
+    paddingTop: "80px",
+    paddingBottom: "2rem",
+    position: "relative",
+    "&::before": {
+      content: '""',
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background:
+        'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M30 0L30 60" stroke="%234E9EE7" stroke-opacity="0.05" stroke-width="1"/%3E%3Cpath d="M0 30L60 30" stroke="%234E9EE7" stroke-opacity="0.05" stroke-width="1"/%3E%3C/svg%3E")',
+      opacity: 0.3,
+      pointerEvents: "none",
+      zIndex: 0,
+    },
+  },
 };

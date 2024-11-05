@@ -1,74 +1,78 @@
 import { Box, Typography } from "@mui/material";
 import { useTheme } from "../../styles/context/ThemeContext.jsx";
 import { footerStyles } from "../../styles/context/LayoutStyles.jsx";
+import { useState } from "react";
+
+const MusicNote = ({ delay, position, size }) => (
+  <Box
+    component="span"
+    sx={{
+      ...footerStyles.musicNote,
+      animationDelay: `${delay}s`,
+      left: `${position}%`,
+      bottom: "-20px",
+      fontSize: size,
+    }}
+  >
+    {["♪", "♫", "♩", "♬"][Math.floor(Math.random() * 4)]}
+  </Box>
+);
 
 const Footer = () => {
   const { darkMode } = useTheme();
   const currentYear = new Date().getFullYear();
 
+  // Generate random music notes
+  const [musicNotes] = useState(() =>
+    Array.from({ length: 6 }, (_, i) => ({
+      id: i,
+      delay: Math.random() * 5,
+      position: Math.random() * 100,
+      size: Math.random() * 10 + 20 + "px",
+    }))
+  );
+
   return (
-    <Box
-      component="footer"
-      sx={{
-        ...footerStyles.container,
-        backgroundColor: darkMode ? "#1e1e1e" : "#ffffff",
-        borderTop: `1px solid ${darkMode ? "#333" : "#eaeaea"}`,
-      }}
-    >
-      <Box sx={footerStyles.wave}>
-        <svg
-          data-name="Layer 1"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            fill={darkMode ? "#121212" : "#f8f9fa"}
+    <Box component="footer" sx={footerStyles.wrapper(darkMode)}>
+      <Box sx={footerStyles.noteAnimation} /> {/* Apply keyframes */}
+      {/* Animated Music Notes */}
+      {musicNotes.map((note) => (
+        <MusicNote
+          key={note.id}
+          delay={note.delay}
+          position={note.position}
+          size={note.size}
+        />
+      ))}
+      {/* Audio Wave Animation */}
+      <Box sx={footerStyles.waveContainer}>
+        {[...Array(12)].map((_, index) => (
+          <Box
+            key={index}
+            sx={{
+              ...footerStyles.waveBar,
+              ...footerStyles.wave,
+              animationDelay: `${index * 0.1}s`,
+            }}
           />
-        </svg>
+        ))}
       </Box>
-
+      {/* Footer Content */}
       <Box sx={footerStyles.content}>
-        <Box sx={footerStyles.innerContent}>
-          <Box sx={footerStyles.waveContainer}>
-            {[...Array(12)].map((_, index) => (
-              <Box
-                key={index}
-                sx={{
-                  ...footerStyles.waveBar,
-                  backgroundColor: "primary.main",
-                  animationDelay: `${index * 0.1}s`,
-                }}
-              />
-            ))}
+        <Typography sx={footerStyles.gradientText(darkMode)}>
+          Made with
+          <Box component="span" sx={footerStyles.pulsingNote}>
+            ♪
           </Box>
+          by BubbleMachine
+        </Typography>
 
-          <Typography
-            variant="body3"
-            sx={{
-              color: darkMode ? "text.secondary" : "text.primary",
-              fontWeight: 1000,
-              textAlign: "center",
-            }}
-          >
-            Made with{" "}
-            <Box component="span" sx={footerStyles.musicNote}>
-              ♪
-            </Box>{" "}
-            by BubbleTea(m)
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{
-              color: darkMode ? "text.disabled" : "text.secondary",
-            }}
-          >
-            © {currentYear} BubbleMachine. All rights reserved.
-          </Typography>
-        </Box>
+        <Typography sx={footerStyles.copyright}>
+          © {currentYear} BubbleMachine. All rights reserved.
+        </Typography>
       </Box>
+      {/* Background Gradient Overlay */}
+      <Box sx={footerStyles.gradient(darkMode)} />
     </Box>
   );
 };

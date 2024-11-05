@@ -19,38 +19,47 @@ import { useTheme } from "../../styles/context/ThemeContext.jsx";
 import { headerStyles } from "../../styles/context/LayoutStyles.jsx";
 import logo from "../../assets/BubbleMachine_Transparent.png";
 
-const Bubble = ({ delay }) => (
+const MusicNote = ({ delay, position }) => (
   <Box
     sx={{
-      ...headerStyles.bubble,
-      width: Math.random() * 30 + 20 + "px",
-      height: Math.random() * 30 + 20 + "px",
-      left: Math.random() * 100 + "%",
-      animationDelay: delay + "s",
+      ...headerStyles.musicNote,
+      animationDelay: `${delay}s`,
+      left: `${position.x}%`,
+      top: `${position.y}%`,
     }}
-  />
+  >
+    {["♪", "♫", "♩", "♬"][Math.floor(Math.random() * 4)]}
+  </Box>
 );
 
 const Header = () => {
   const { darkMode, setDarkMode } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [moreAnchorEl, setMoreAnchorEl] = useState(null);
-  const [bubbles] = useState(() =>
-    Array.from({ length: 5 }, (_, i) => ({
+  const [musicNotes] = useState(() =>
+    Array.from({ length: 8 }, (_, i) => ({
       id: i,
-      delay: Math.random() * 5,
+      delay: Math.random() * 8,
+      position: {
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+      },
     }))
   );
 
   return (
     <AppBar sx={headerStyles.appBar(darkMode)}>
       <Toolbar sx={headerStyles.toolbar}>
-        {/* Animated Bubbles */}
-        {bubbles.map((bubble) => (
-          <Bubble key={bubble.id} delay={bubble.delay} />
+        {/* Animated Music Notes */}
+        {musicNotes.map((note) => (
+          <MusicNote
+            key={note.id}
+            delay={note.delay}
+            position={note.position}
+          />
         ))}
 
-        {/* Logo  */}
+        {/* Logo and Brand */}
         <Box sx={headerStyles.logoContainer}>
           <img src={logo} alt="Logo" style={headerStyles.logo} />
           <Box component="span" sx={headerStyles.brandText(darkMode)}>
@@ -58,7 +67,7 @@ const Header = () => {
           </Box>
         </Box>
 
-        {/* Nabar  Controls */}
+        {/* Navigation Controls */}
         <Box sx={headerStyles.navContainer}>
           <Tooltip
             title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -83,14 +92,16 @@ const Header = () => {
           <Tooltip title="Account settings">
             <IconButton
               onClick={(e) => setAnchorEl(e.currentTarget)}
-              sx={headerStyles.iconButton}
+              sx={{
+                ...headerStyles.iconButton,
+                border: "2px solid #1976d2", // Original blue border
+              }}
             >
               <Avatar
                 sx={{
                   width: 32,
                   height: 32,
                   bgcolor: "transparent",
-                  border: "2px solid #fff",
                 }}
               >
                 <AccountIcon />

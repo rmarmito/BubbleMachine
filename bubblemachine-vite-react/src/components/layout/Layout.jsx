@@ -1,17 +1,22 @@
 import Header from "./Header";
 import Footer from "./Footer";
+import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
-import { Toolbar } from "@mui/material";
+import { useTheme } from "../../styles/context/ThemeContext";
+import { appStyles } from "../../styles/context/LayoutStyles.jsx";
 
-export default function Layout() {
+const Layout = () => {
+  const { darkMode } = useTheme();
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <Box sx={appStyles.mainContainer(darkMode)}>
       <Header />
-      <Toolbar />
-      <main className="flex-grow">
+      <Box sx={appStyles.contentWrapper}>
         <Outlet />
-      </main>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
-}
+};
+
+export default Layout;
