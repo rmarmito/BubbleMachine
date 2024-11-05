@@ -130,7 +130,7 @@ export const footerStyles = {
     backgroundClip: "text",
     WebkitBackgroundClip: "text",
     color: "transparent",
-    fontWeight: 500,
+    fontWeight: 700,
     display: "flex",
     alignItems: "center",
     gap: "0.5rem",
@@ -138,7 +138,7 @@ export const footerStyles = {
   pulsingNote: {
     "@keyframes pulse": {
       "0%, 100%": {
-        transform: "scale(1)",
+        transform: "scale(1.5)",
       },
       "50%": {
         transform: "scale(1.2)",

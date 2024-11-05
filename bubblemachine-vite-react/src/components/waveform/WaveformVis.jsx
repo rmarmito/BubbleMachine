@@ -24,7 +24,7 @@ const WaveformVis = ({
   setVisibleEndTime,
   selectedBubble,
   setIsAudioLoaded,
-  setSelectedBubble, // Add this prop
+  setSelectedBubble,
 }) => {
   const waveformRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
@@ -73,7 +73,7 @@ const WaveformVis = ({
       regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
 
       const hoverPlugin = HoverPlugin.create({
-        lineColor: "#ff0000", // Set hover line color to red
+        lineColor: "#ff0000", // Red hover
         lineWidth: 2,
         labelBackground: "#555",
         labelColor: "#fff",
@@ -84,7 +84,7 @@ const WaveformVis = ({
       const ws = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#ddd",
-        progressColor: "#4E9EE7", // Set played waveform color to your brand blue
+        progressColor: "#4E9EE7",
         cursorColor: "#4E9EE7",
         height: 128,
         plugins: [
@@ -149,7 +149,6 @@ const WaveformVis = ({
     }
   }, [zoomLevel]);
 
-  // Handle audio file loading
   useEffect(() => {
     if (wavesurfer && audioFile) {
       wavesurfer.load(audioFile);
@@ -179,17 +178,14 @@ const WaveformVis = ({
         wavesurfer.seekTo(seekRatio);
         wavesurfer.play();
       } else {
-        // Clear regions when no bubble is selected
         regionsPluginRef.current.clearRegions();
       }
     }
   }, [selectedBubble, wavesurfer, duration]);
 
-  // Deselect bubble when clicking outside the waveform
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (waveformRef.current && !waveformRef.current.contains(event.target)) {
-        // Clicked outside the waveform
         setSelectedBubble(null);
       }
     };
@@ -203,7 +199,6 @@ const WaveformVis = ({
     };
   }, [setSelectedBubble]);
 
-  // Prevent deselecting when clicking inside the waveform
   useEffect(() => {
     const waveformElement = waveformRef.current;
 
@@ -284,11 +279,11 @@ const WaveformVis = ({
   return (
     <div
       style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}
-      onClick={() => setSelectedBubble(null)} // Deselect when clicking outside
+      onClick={() => setSelectedBubble(null)}
     >
       <div
         style={{ position: "relative", display: "inline-block", width: "100%" }}
-        onClick={(e) => e.stopPropagation()} // Prevent deselect when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
       </div>

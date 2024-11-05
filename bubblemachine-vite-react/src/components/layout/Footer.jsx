@@ -35,7 +35,6 @@ const Footer = () => {
   return (
     <Box component="footer" sx={footerStyles.wrapper(darkMode)}>
       <Box sx={footerStyles.noteAnimation} /> {/* Apply keyframes */}
-      {/* Animated Music Notes */}
       {musicNotes.map((note) => (
         <MusicNote
           key={note.id}
