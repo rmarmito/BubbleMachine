@@ -24,11 +24,11 @@ const WaveformVis = ({
   setVisibleEndTime,
   selectedBubble,
   setIsAudioLoaded,
+  setSelectedBubble, // Add this prop
 }) => {
   const waveformRef = useRef(null);
   const [wavesurfer, setWavesurfer] = useState(null);
   const regionsPluginRef = useRef(null);
-  const hoverPluginRef = useRef(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -37,12 +37,12 @@ const WaveformVis = ({
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
 
-  // Zustand store
+  // Zustand store for managing bubbles
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
-  // Memoized render bubbles function
+  // Memoized function to render bubbles only when bubbles change
   const renderBubbles = useCallback(
     throttle(() => {
       if (wavesurfer && regionsPluginRef.current) {
@@ -52,7 +52,7 @@ const WaveformVis = ({
             id: bubble.id,
             start: convertToSeconds(bubble.startTime),
             end: convertToSeconds(bubble.stopTime),
-            color: colorToRGB(bubble.color, 0.3),
+            color: colorToRGB(bubble.color),
             drag: false,
             resize: true,
           });
@@ -62,38 +62,34 @@ const WaveformVis = ({
     [bubbles, wavesurfer]
   );
 
-  // Initialize WaveSurfer
+  // Initialize WaveSurfer with plugins
   useEffect(() => {
-    if (waveformRef.current && audioFile) {
-      // Clean up the previous WaveSurfer instance
+    if (waveformRef.current) {
+      // Clean up previous instance
       if (wavesurfer) {
         wavesurfer.destroy();
       }
 
-      // Initialize plugins
-      regionsPluginRef.current = RegionsPlugin.create({
-        dragSelection: false,
-      });
+      regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
 
-      hoverPluginRef.current = HoverPlugin.create({
-        lineColor: "#4E9EE7", // Your brand blue
+      const hoverPlugin = HoverPlugin.create({
+        lineColor: "#ff0000", // Set hover line color to red
         lineWidth: 2,
         labelBackground: "#555",
         labelColor: "#fff",
         labelSize: "11px",
         formatTimeCallback: formatTime,
-        opacity: 0.2, // Start with hover visible
       });
 
       const ws = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#ddd",
-        progressColor: "#2196f3",
-        cursorColor: "#2196f3",
+        progressColor: "#4E9EE7", // Set played waveform color to your brand blue
+        cursorColor: "#4E9EE7",
         height: 128,
         plugins: [
           regionsPluginRef.current,
-          hoverPluginRef.current,
+          hoverPlugin,
           ZoomPlugin.create({
             scale: zoomLevel,
             maxZoom: 1000,
@@ -102,31 +98,19 @@ const WaveformVis = ({
         ],
       });
 
-      // Set the wavesurfer state before adding event listeners
       setWavesurfer(ws);
-
-      // Attach event listeners to the regions plugin
-      regionsPluginRef.current.on("region-updated", (region) => {
-        updateBubble(region.id, {
-          startTime: formatTime(region.start),
-          stopTime: formatTime(region.end),
-        });
-      });
-
-      // Load the audio file
-      ws.load(audioFile);
 
       // Event listeners
       ws.on("ready", () => {
         const audioDuration = ws.getDuration();
         setDuration(audioDuration);
-        setAudioDuration(audioDuration);
-        setIsAudioLoaded(true);
+        setAudioDuration && setAudioDuration(audioDuration);
+        setIsAudioLoaded && setIsAudioLoaded(true);
         renderBubbles();
       });
 
       ws.on("redraw", () => {
-        setVizWidth(waveformRef.current.clientWidth);
+        setVizWidth && setVizWidth(waveformRef.current.clientWidth);
       });
 
       ws.on("audioprocess", (time) => {
@@ -134,13 +118,15 @@ const WaveformVis = ({
       });
 
       ws.on("play", () => setIsPlaying(true));
+
       ws.on("pause", () => setIsPlaying(false));
 
       ws.on(
         "scroll",
         throttle((visibleStartTime, visibleEndTime) => {
-          setVisibleStartTime(formatTime(visibleStartTime));
-          setVisibleEndTime(formatTime(visibleEndTime));
+          setVisibleStartTime &&
+            setVisibleStartTime(formatTime(visibleStartTime));
+          setVisibleEndTime && setVisibleEndTime(formatTime(visibleEndTime));
         }, 200)
       );
 
@@ -149,28 +135,102 @@ const WaveformVis = ({
         debounce(() => handleZoomCheck(ws), 200)
       );
 
+      regionsPluginRef.current.on("region-updated", (region) => {
+        updateBubble(region.id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
+      });
+
       return () => {
         ws.destroy();
-        setIsAudioLoaded(false);
+        setIsAudioLoaded && setIsAudioLoaded(false);
       };
     }
-  }, [audioFile, zoomLevel]);
+  }, [zoomLevel]);
+
+  // Handle audio file loading
+  useEffect(() => {
+    if (wavesurfer && audioFile) {
+      wavesurfer.load(audioFile);
+    }
+  }, [audioFile, wavesurfer]);
 
   // Handle selected bubble
   useEffect(() => {
-    if (wavesurfer && selectedBubble) {
-      const startSeconds = convertToSeconds(selectedBubble.startTime);
-      wavesurfer.seekTo(startSeconds / duration);
-      wavesurfer.play();
+    if (wavesurfer) {
+      if (selectedBubble) {
+        // Clear existing regions and add selected bubble's region
+        regionsPluginRef.current.clearRegions();
+        const { startTime, stopTime, color } = selectedBubble;
+
+        regionsPluginRef.current.addRegion({
+          id: selectedBubble.id,
+          start: convertToSeconds(startTime),
+          end: convertToSeconds(stopTime),
+          color: colorToRGB(color),
+          drag: false,
+          resize: true,
+        });
+
+        // Set the playback to the bubble's start time and play
+        const startSeconds = convertToSeconds(startTime);
+        const seekRatio = startSeconds / duration;
+        wavesurfer.seekTo(seekRatio);
+        wavesurfer.play();
+      } else {
+        // Clear regions when no bubble is selected
+        regionsPluginRef.current.clearRegions();
+      }
     }
   }, [selectedBubble, wavesurfer, duration]);
+
+  // Deselect bubble when clicking outside the waveform
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (waveformRef.current && !waveformRef.current.contains(event.target)) {
+        // Clicked outside the waveform
+        setSelectedBubble(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside); // For mobile devices
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [setSelectedBubble]);
+
+  // Prevent deselecting when clicking inside the waveform
+  useEffect(() => {
+    const waveformElement = waveformRef.current;
+
+    const handleWaveformClick = (event) => {
+      event.stopPropagation();
+    };
+
+    if (waveformElement) {
+      waveformElement.addEventListener("mousedown", handleWaveformClick);
+      waveformElement.addEventListener("touchstart", handleWaveformClick);
+    }
+
+    return () => {
+      if (waveformElement) {
+        waveformElement.removeEventListener("mousedown", handleWaveformClick);
+        waveformElement.removeEventListener("touchstart", handleWaveformClick);
+      }
+    };
+  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const fileUrl = URL.createObjectURL(file);
       setAudioFile(fileUrl);
-      setAudioFileName(file.name);
+      setAudioFileName && setAudioFileName(file.name);
+      setIsAudioLoaded && setIsAudioLoaded(false);
     }
   };
 
@@ -186,7 +246,10 @@ const WaveformVis = ({
     [zoomLevel]
   );
 
-  const handlePlayPause = () => wavesurfer?.playPause();
+  const handlePlayPause = () => {
+    if (wavesurfer) wavesurfer.playPause();
+  };
+
   const handleRestart = () => {
     if (wavesurfer) {
       wavesurfer.seekTo(0);
@@ -214,14 +277,18 @@ const WaveformVis = ({
       startTime: formatTime(start),
       stopTime: formatTime(end),
       color: "#4E9EE7",
-      layer: "1",
+      layer: 1,
     });
   };
 
   return (
-    <div style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}>
+    <div
+      style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}
+      onClick={() => setSelectedBubble(null)} // Deselect when clicking outside
+    >
       <div
         style={{ position: "relative", display: "inline-block", width: "100%" }}
+        onClick={(e) => e.stopPropagation()} // Prevent deselect when clicking inside
       >
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
       </div>
