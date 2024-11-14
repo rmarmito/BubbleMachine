@@ -18,13 +18,10 @@ const BubbleRender = React.memo(
     const containerRef = useRef(null);
     const [hoveredBubble, setHoveredBubble] = useState(null);
 
-    const visStartMs = convertToMilliseconds(visibleStartTime) || 0;
+    const visStartMs = convertToMilliseconds(visibleStartTime);
     const visStopMs =
       convertToMilliseconds(visibleEndTime) ||
       convertToMilliseconds(audioDuration);
-
-    // Custom cursor style based on audio loaded state
-    const cursorStyle = isAudioLoaded ? "pointer" : "not-allowed";
 
     const handleMouseEnter = useCallback((id) => {
       setHoveredBubble(id);
@@ -44,69 +41,84 @@ const BubbleRender = React.memo(
     );
 
     const renderedBubbles = useMemo(() => {
-      return bubbleData.map((bubble, index) => {
-        if (!bubble?.startTime || !bubble?.stopTime) return null;
+      if (!audioDuration || !vizWidth) return [];
 
-        const startTime = convertToMilliseconds(bubble.startTime) || 0;
-        const stopTime = convertToMilliseconds(bubble.stopTime) || 0;
+      const visibleDuration = visStopMs - visStartMs;
+      const scale = vizWidth / visibleDuration;
 
-        if (startTime >= stopTime) return null; // Invalid time range
+      return bubbleData
+        .map((bubble, index) => {
+          if (!bubble?.startTime || !bubble?.stopTime) return null;
 
-        if (startTime > visStopMs || stopTime < visStartMs) return null; // Bubble not in visible range
+          const startTime = convertToMilliseconds(bubble.startTime);
+          const stopTime = convertToMilliseconds(bubble.stopTime);
 
-        const visibleDuration = Math.max(1, visStopMs - visStartMs);
-        const startPosition = Math.max(
-          0,
-          ((startTime - visStartMs) / visibleDuration) * vizWidth
-        );
-        const endPosition = Math.min(
-          vizWidth,
-          ((stopTime - visStartMs) / visibleDuration) * vizWidth
-        );
-        const bubbleWidth = Math.max(0, endPosition - startPosition);
+          if (startTime >= stopTime) return null;
 
-        // Use the actual layer value from the bubble data
-        const layer = parseInt(bubble.layer, 10) || 1;
-        const bubbleHeight = layer * 50;
-        const bubbleLevel = 6 - layer;
+          // Calculate position relative to visible window
+          const startPosition = (startTime - visStartMs) * scale;
+          const endPosition = (stopTime - visStartMs) * scale;
 
-        const divStyle = {
-          bottom: 0,
-          backgroundColor: addTransparency(bubble.color || "#4E9EE7", 0.6),
-          left: `${startPosition}px`,
-          width: `${bubbleWidth}px`,
-          height: `${bubbleHeight}px`,
-          zIndex: bubbleLevel,
-          position: "absolute",
-          borderTopLeftRadius: "80%",
-          borderTopRightRadius: "80%",
-          transition: "opacity 0.3s ease",
-          cursor: cursorStyle,
-          opacity: hoveredBubble === bubble.id ? 0.8 : 1,
-        };
+          // Skip if completely outside visible range
+          if (endPosition < 0 || startPosition > vizWidth) return null;
 
-        return (
-          <div
-            key={bubble.id || index}
-            style={divStyle}
-            onMouseEnter={() => handleMouseEnter(bubble.id)}
-            onMouseLeave={handleMouseLeave}
-            onClick={() => handleClick(bubble)}
-          />
-        );
-      });
+          // Adjust position and width for partially visible bubbles
+          const adjustedStart = Math.max(0, startPosition);
+          const adjustedEnd = Math.min(vizWidth, endPosition);
+          const bubbleWidth = Math.max(2, adjustedEnd - adjustedStart);
+
+          const layer = parseInt(bubble.layer, 10) || 1;
+          const bubbleHeight = layer * 40; // Reduced height for better visualization
+          const bubbleLevel = 6 - layer;
+
+          const divStyle = {
+            position: "absolute",
+            bottom: 0,
+            left: `${adjustedStart}px`,
+            width: `${bubbleWidth}px`,
+            height: `${bubbleHeight}px`,
+            backgroundColor: addTransparency(bubble.color || "#4E9EE7", 0.6),
+            borderTopLeftRadius: "80%",
+            borderTopRightRadius: "80%",
+            transition: "all 0.1s ease-out",
+            cursor: isAudioLoaded ? "pointer" : "not-allowed",
+            opacity: hoveredBubble === bubble.id ? 0.8 : 1,
+            zIndex: bubbleLevel,
+          };
+
+          return (
+            <div
+              key={bubble.id || index}
+              style={divStyle}
+              onMouseEnter={() => handleMouseEnter(bubble.id)}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => handleClick(bubble)}
+            />
+          );
+        })
+        .filter(Boolean);
     }, [
       bubbleData,
       hoveredBubble,
+      visStartMs,
+      visStopMs,
+      vizWidth,
+      audioDuration,
       isAudioLoaded,
       handleMouseEnter,
       handleMouseLeave,
       handleClick,
-      visStartMs,
-      visStopMs,
-      vizWidth,
-      cursorStyle,
     ]);
+
+    // Add some console logging to debug
+    console.log("Bubble Data:", {
+      bubbleCount: bubbleData.length,
+      renderedCount: renderedBubbles.length,
+      vizWidth,
+      visibleStartTime,
+      visibleEndTime,
+      audioDuration,
+    });
 
     return (
       <div
@@ -114,8 +126,8 @@ const BubbleRender = React.memo(
         style={{
           position: "relative",
           width: "100%",
-          height: "200px",
-          cursor: cursorStyle,
+          height: "100%",
+          backgroundColor: "transparent",
         }}
       >
         {renderedBubbles}
@@ -123,5 +135,7 @@ const BubbleRender = React.memo(
     );
   }
 );
+
+BubbleRender.displayName = "BubbleRender";
 
 export default BubbleRender;

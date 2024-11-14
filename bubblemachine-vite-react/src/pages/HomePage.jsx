@@ -13,7 +13,7 @@ export default function HomePage() {
   const [visibleStartTime, setVisibleStartTime] = useState(0);
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
-  const [isAudioLoaded, setIsAudioLoaded] = useState(false); // Add this state
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
 
   return (
     <div>
@@ -26,30 +26,44 @@ export default function HomePage() {
         <Box
           sx={{
             display: "flex",
-            justifyContent: "center",
-            position: "relative",
-            marginBottom: 0,
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
           }}
         >
-          <BubbleRender
-            audioDuration={audioDuration}
-            vizWidth={vizWidth}
-            visibleStartTime={visibleStartTime}
-            visibleEndTime={visibleEndTime}
-            setSelectedBubble={setSelectedBubble}
-            isAudioLoaded={isAudioLoaded}
-          />
+          {/* Bubble render area */}
+          <Box
+            sx={{
+              width: "100%",
+              height: "200px", // Space for bubbles
+              position: "relative",
+              marginBottom: -2, // Reduce gap between bubbles and waveform
+            }}
+          >
+            <BubbleRender
+              audioDuration={audioDuration}
+              vizWidth={vizWidth}
+              visibleStartTime={visibleStartTime}
+              visibleEndTime={visibleEndTime}
+              setSelectedBubble={setSelectedBubble}
+              isAudioLoaded={isAudioLoaded}
+            />
+          </Box>
+
+          {/* Waveform area */}
+          <Box sx={{ width: "100%" }}>
+            <WaveformVis
+              setAudioDuration={setAudioDuration}
+              setVizWidth={setVizWidth}
+              setVisibleStartTime={setVisibleStartTime}
+              setVisibleEndTime={setVisibleEndTime}
+              selectedBubble={selectedBubble}
+              setAudioFileName={setAudioFileName}
+              setIsAudioLoaded={setIsAudioLoaded}
+              setSelectedBubble={setSelectedBubble}
+            />
+          </Box>
         </Box>
-        <WaveformVis
-          setAudioDuration={setAudioDuration}
-          setVizWidth={setVizWidth}
-          setVisibleStartTime={setVisibleStartTime}
-          setVisibleEndTime={setVisibleEndTime}
-          selectedBubble={selectedBubble}
-          setAudioFileName={setAudioFileName}
-          setIsAudioLoaded={setIsAudioLoaded} // Pass this prop
-          sx={{ marginTop: 0 }}
-        />
       </PrimaryContainer>
 
       <PrimaryContainer
@@ -58,8 +72,7 @@ export default function HomePage() {
         title=""
         titleColor="#FF0000"
       >
-        <BubbleTable isAudioLoaded={isAudioLoaded} />{" "}
-        {/* Optionally pass to BubbleTable */}
+        <BubbleTable isAudioLoaded={isAudioLoaded} />
       </PrimaryContainer>
 
       {[...Array(6)].map((_, index) => (
