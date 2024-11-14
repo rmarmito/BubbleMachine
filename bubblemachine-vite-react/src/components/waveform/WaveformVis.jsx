@@ -112,9 +112,9 @@ const WaveformVis = ({
         autoCenter: false,
         fillParent: false,
         scrollParent: true,
-        renderer: "WebGL2", // Use WebGL rendering for better performance
-        pixelRatio: 1, // Lower pixel ratio for better performance
-        minPxPerSec: 1, // Adjust this for initial zoom level
+        renderer: "WebGL2", // WebGL rendering for better performance
+        pixelRatio: 0.1, // Lower pixel ratio for better performance
+        minPxPerSec: 50, // initial zoom
         interact: true,
         splitChannels: false,
         normalize: true,
@@ -126,7 +126,7 @@ const WaveformVis = ({
           regionsPluginRef.current,
           hoverPlugin,
           ZoomPlugin.create({
-            minZoom: 1,
+            minZoom: 0.1,
             maxZoom: 20,
           }),
         ],
