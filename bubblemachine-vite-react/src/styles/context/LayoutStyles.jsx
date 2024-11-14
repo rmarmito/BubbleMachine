@@ -11,7 +11,7 @@ export const headerStyles = {
     pointerEvents: "none",
     animation: "float 8s infinite linear",
     opacity: 0.1,
-    color: "#4E9EE7", // Updated blue
+    color: "#4E9EE7",
     fontSize: "24px",
   },
   toolbar: {
@@ -22,10 +22,10 @@ export const headerStyles = {
   },
   iconButton: {
     color: "#fff",
-    transition: "all 0.3s ease",
+    transition: "background-color 0.3s ease",
     "&:hover": {
-      transform: "translateY(-2px)",
-      backgroundColor: "rgba(78, 158, 231, 0.2)", // Updated blue with transparency
+      // Removed transform to eliminate hover animation
+      backgroundColor: "rgba(78, 158, 231, 0.2)",
     },
   },
   logoContainer: {
@@ -39,18 +39,14 @@ export const headerStyles = {
     height: "45px",
     width: "auto",
     marginRight: "10px",
-    filter: "drop-shadow(0 0 4px rgba(78, 158, 231, 0.3))", // Updated blue shadow
-    transition: "all 0.3s ease",
-    "&:hover": {
-      transform: "scale(1.05) rotate(-5deg)",
-    },
+    filter: "drop-shadow(0 0 4px rgba(78, 158, 231, 0.3))",
   },
   brandText: (darkMode) => ({
     fontFamily: "Coiny, cursive",
     fontSize: "38px",
     background: `linear-gradient(45deg, #4E9EE7, ${
       darkMode ? "#90CAF9" : "#76B7ED"
-    })`, // Updated blue
+    })`,
     backgroundClip: "text",
     WebkitBackgroundClip: "text",
     color: "transparent",
@@ -185,7 +181,6 @@ export const containerStyles = {
     boxShadow: isHovered
       ? "0 8px 32px rgba(78, 158, 231, 0.2)"
       : "0 2px 4px rgba(0, 0, 0, 0.05)",
-    transform: isHovered ? "translateY(-4px)" : "translateY(0)",
   }),
 
   header: {
