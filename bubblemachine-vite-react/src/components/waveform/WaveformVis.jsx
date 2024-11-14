@@ -43,37 +43,59 @@ const WaveformVis = ({
   const addBubble = useBubbleStore((state) => state.addBubble);
 
   // Memoized function to render bubbles only when bubbles change
-  const renderBubbles = useCallback(
-    throttle(() => {
-      if (wavesurfer && regionsPluginRef.current) {
-        regionsPluginRef.current.clearRegions();
-        bubbles.forEach((bubble) => {
+  const renderBubbles = useCallback(() => {
+    if (wavesurfer && regionsPluginRef.current) {
+      const existingRegions = regionsPluginRef.current.getRegions();
+      const existingRegionIds = new Set(Object.keys(existingRegions));
+
+      // Add or update regions
+      bubbles.forEach((bubble) => {
+        const start = convertToSeconds(bubble.startTime);
+        const end = convertToSeconds(bubble.stopTime);
+        const color = colorToRGB(bubble.color);
+
+        const existingRegion = existingRegions[bubble.id];
+        if (existingRegion) {
+          // Update the region if it has changed
+          if (
+            existingRegion.start !== start ||
+            existingRegion.end !== end ||
+            existingRegion.color !== color
+          ) {
+            existingRegion.update({
+              start,
+              end,
+              color,
+            });
+          }
+          existingRegionIds.delete(bubble.id); // Mark as processed
+        } else {
+          // Add new region
           regionsPluginRef.current.addRegion({
             id: bubble.id,
-            start: convertToSeconds(bubble.startTime),
-            end: convertToSeconds(bubble.stopTime),
-            color: colorToRGB(bubble.color),
+            start,
+            end,
+            color,
             drag: false,
             resize: true,
           });
-        });
-      }
-    }, 200),
-    [bubbles, wavesurfer]
-  );
+        }
+      });
+
+      // Remove regions that are no longer in bubbles
+      existingRegionIds.forEach((regionId) => {
+        existingRegions[regionId].remove();
+      });
+    }
+  }, [bubbles, wavesurfer]);
 
   // Initialize WaveSurfer with plugins
   useEffect(() => {
-    if (waveformRef.current) {
-      // Clean up previous instance
-      if (wavesurfer) {
-        wavesurfer.destroy();
-      }
-
+    if (waveformRef.current && !wavesurfer) {
       regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
 
       const hoverPlugin = HoverPlugin.create({
-        lineColor: "#ff0000", // Red hover
+        lineColor: "#ff0000",
         lineWidth: 2,
         labelBackground: "#555",
         labelColor: "#fff",
@@ -87,13 +109,25 @@ const WaveformVis = ({
         progressColor: "#4E9EE7",
         cursorColor: "#4E9EE7",
         height: 128,
+        autoCenter: false,
+        fillParent: false,
+        scrollParent: true,
+        renderer: "WebGL2", // Use WebGL rendering for better performance
+        pixelRatio: 1, // Lower pixel ratio for better performance
+        minPxPerSec: 1, // Adjust this for initial zoom level
+        interact: true,
+        splitChannels: false,
+        normalize: true,
+        drawingContextAttributes: {
+          desynchronized: true,
+          preserveDrawingBuffer: true,
+        },
         plugins: [
           regionsPluginRef.current,
           hoverPlugin,
           ZoomPlugin.create({
-            scale: zoomLevel,
-            maxZoom: 1000,
-            autoCenter: false,
+            minZoom: 1,
+            maxZoom: 20,
           }),
         ],
       });
@@ -146,6 +180,12 @@ const WaveformVis = ({
         ws.destroy();
         setIsAudioLoaded && setIsAudioLoaded(false);
       };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (wavesurfer) {
+      wavesurfer.zoom(zoomLevel);
     }
   }, [zoomLevel]);
 
