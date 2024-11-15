@@ -333,35 +333,59 @@ const WaveformVis = ({
       >
         {/* Left Column - Playback Controls */}
         <Stack spacing={2} alignItems="center">
-          {/* Play/Pause Button */}
-          <IconButton
-            color="primary"
-            onClick={handlePlayPause}
-            sx={{
-              width: 56,
-              height: 56,
-              bgcolor: "primary.main",
-              color: "white",
-              "&:hover": {
-                bgcolor: "primary.dark",
-              },
-            }}
-          >
-            {isPlaying ? <Pause /> : <PlayArrow />}
-          </IconButton>
-
-          {/* Reset and Zoom Controls */}
-          <Stack direction="row" spacing={1}>
-            <IconButton onClick={handleRestart} size="medium">
+          {/* Play Controls Group */}
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* Reset and Zoom Controls */}
+            <IconButton
+              utton
+              onClick={handleRestart}
+              size="medium"
+              sx={{
+                border: "1px solid",
+                borderColor: "grey.300",
+                "&:hover": {
+                  bgcolor: "grey.100",
+                },
+              }}
+            >
               <RestartAlt />
             </IconButton>
-            <IconButton onClick={toggleZoom} size="medium">
-              {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
-                <ZoomIn />
-              ) : (
-                <ZoomOut />
-              )}
+
+            {/* Play/Pause Button */}
+            <IconButton
+              color="primary"
+              onClick={handlePlayPause}
+              sx={{
+                width: 56,
+                height: 56,
+                bgcolor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+              }}
+            >
+              {isPlaying ? <Pause /> : <PlayArrow />}
             </IconButton>
+            <Stack direction="row" spacing={1}>
+              <IconButton
+                onClick={toggleZoom}
+                size="medium"
+                sx={{
+                  border: "1px solid",
+                  borderColor: "grey.300",
+                  "&:hover": {
+                    bgcolor: "grey.100",
+                  },
+                }}
+              >
+                {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
+                  <ZoomIn />
+                ) : (
+                  <ZoomOut />
+                )}
+              </IconButton>
+            </Stack>
           </Stack>
 
           {/* Upload Button */}

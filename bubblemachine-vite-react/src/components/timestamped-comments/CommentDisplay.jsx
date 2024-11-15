@@ -82,7 +82,7 @@ const CommentDisplay = ({ wavesurfer }) => {
       elevation={1}
       sx={{
         p: 2,
-        height: "150px",
+        height: "100px",
         overflow: "auto",
         display: "flex",
         flexDirection: "column",
