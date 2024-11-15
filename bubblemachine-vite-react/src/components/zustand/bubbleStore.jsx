@@ -4,6 +4,11 @@ import { generateRandomColor } from "../../helpers/utils";
 const useBubbleStore = create((set, get) => ({
   bubbles: [],
   selectedBubble: null,
+  clearBubbles: () =>
+    set({
+      bubbles: [],
+      selectedBubble: null,
+    }),
 
   addBubble: (bubble) =>
     set((state) => {

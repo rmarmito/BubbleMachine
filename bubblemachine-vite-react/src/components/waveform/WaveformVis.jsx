@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import { Box, IconButton, Paper, Stack, Button } from "@mui/material";
+import { Box, IconButton, Stack, Button } from "@mui/material";
 import {
   PlayArrow,
   Pause,
@@ -45,9 +45,12 @@ const WaveformVis = ({
   setIsAudioLoaded,
   setSelectedBubble,
 }) => {
+  // Refs
   const waveformRef = useRef(null);
-  const [wavesurfer, setWavesurfer] = useState(null);
   const regionsPluginRef = useRef(null);
+
+  // State Management
+  const [wavesurfer, setWavesurfer] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -57,11 +60,13 @@ const WaveformVis = ({
   const [scrollLeft, setScrollLeft] = useState(0);
   const [hasFile, setHasFile] = useState(false);
 
+  // Zustand Store
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
+  const clearBubbles = useBubbleStore((state) => state.clearBubbles);
 
-  // Update regions
+  // Region Management
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
@@ -78,7 +83,7 @@ const WaveformVis = ({
     }
   }, [selectedBubble, wavesurfer]);
 
-  // Handle scroll updates
+  // Scroll Handler
   const handleScroll = useCallback(
     throttle(() => {
       if (!wavesurfer || !duration || !waveformRef.current) return;
@@ -103,7 +108,7 @@ const WaveformVis = ({
     [wavesurfer, duration, zoomLevel, setVisibleStartTime, setVisibleEndTime]
   );
 
-  // Calculate zoom
+  // Zoom Management
   const calculateZoom = useCallback(
     (zoomSetting) => {
       if (!wavesurfer || !waveformRef.current) return;
@@ -115,7 +120,6 @@ const WaveformVis = ({
 
         const zoomValue =
           (containerWidth / currentDuration) * zoomSetting.level;
-
         wavesurfer.zoom(zoomValue);
 
         const scrollPosition = wavesurfer.getScroll();
@@ -146,82 +150,153 @@ const WaveformVis = ({
     ]
   );
 
-  // Initialize WaveSurfer
-  useEffect(() => {
-    if (!waveformRef.current || wavesurfer) return;
+  const toggleZoom = useCallback(() => {
+    const newZoomSetting =
+      zoomLevel === ZOOM_SETTINGS.FULL.level
+        ? ZOOM_SETTINGS.HALF
+        : ZOOM_SETTINGS.FULL;
+    setZoomLevel(newZoomSetting.level);
+    calculateZoom(newZoomSetting);
+  }, [zoomLevel, calculateZoom]);
 
-    regionsPluginRef.current = RegionsPlugin.create({
-      dragSelection: false,
-      snapToGrid: 0.1,
-    });
+  // Basic Handlers
+  const handlePlayPause = () => wavesurfer?.playPause();
 
-    const hoverPlugin = HoverPlugin.create({
-      lineColor: "#ff0000",
-      lineWidth: 2,
-      labelBackground: "rgba(0, 0, 0, 0.75)",
-      labelColor: "#fff",
-      labelSize: "11px",
-      formatTimeCallback: (seconds) => formatTime(seconds),
-    });
+  const handleRestart = () => {
+    if (wavesurfer) {
+      wavesurfer.seekTo(0);
+      setCurrentTime(0);
+    }
+  };
 
-    const ws = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: "#ddd",
-      progressColor: "#4E9EE7",
-      cursorColor: "#4E9EE7",
-      height: 128,
-      autoCenter: true,
-      fillParent: true,
-      scrollParent: true,
-      renderer: "WebGL2",
-      pixelRatio: 1,
-      normalize: true,
-      plugins: [regionsPluginRef.current, hoverPlugin],
-    });
+  // File Management
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("File selected:", file.name);
+      const fileUrl = URL.createObjectURL(file);
 
-    setWavesurfer(ws);
-
-    ws.on("ready", () => {
-      const audioDuration = ws.getDuration();
-      setDuration(audioDuration);
-      setAudioDuration?.(audioDuration);
-      setIsAudioLoaded?.(true);
-
-      if (waveformRef.current) {
-        setVizWidth?.(waveformRef.current.clientWidth);
+      // If there's an existing instance, destroy it first
+      if (wavesurfer) {
+        console.log("Destroying existing wavesurfer instance");
+        wavesurfer.destroy();
+        setWavesurfer(null);
       }
 
-      calculateZoom(ZOOM_SETTINGS.FULL);
-    });
-
-    ws.on("scroll", handleScroll);
-    ws.on("play", () => setIsPlaying(true));
-    ws.on("pause", () => setIsPlaying(false));
-    ws.on(
-      "audioprocess",
-      throttle((time) => setCurrentTime(time), 16)
-    );
-
-    regionsPluginRef.current.on("region-updated", (region) => {
-      updateBubble(region.id, {
-        startTime: formatTime(region.start),
-        stopTime: formatTime(region.end),
+      console.log("Initializing new wavesurfer instance");
+      // Initialize new wavesurfer instance
+      regionsPluginRef.current = RegionsPlugin.create({
+        dragSelection: false,
+        snapToGrid: 0.1,
       });
-    });
 
-    return () => {
-      ws.destroy();
+      const hoverPlugin = HoverPlugin.create({
+        lineColor: "#ff0000",
+        lineWidth: 2,
+        labelBackground: "rgba(0, 0, 0, 0.75)",
+        labelColor: "#fff",
+        labelSize: "11px",
+        formatTimeCallback: (seconds) => formatTime(seconds),
+      });
+
+      const ws = WaveSurfer.create({
+        container: waveformRef.current,
+        waveColor: "#ddd",
+        progressColor: "#4E9EE7",
+        cursorColor: "#4E9EE7",
+        height: 128,
+        autoCenter: true,
+        fillParent: true,
+        scrollParent: true,
+        renderer: "WebGL2",
+        pixelRatio: 1,
+        normalize: true,
+        plugins: [regionsPluginRef.current, hoverPlugin],
+      });
+
+      // Set up event listeners
+      ws.on("ready", () => {
+        console.log("Wavesurfer ready event fired");
+        const audioDuration = ws.getDuration();
+        setDuration(audioDuration);
+        setAudioDuration?.(audioDuration);
+        setIsAudioLoaded?.(true);
+
+        if (waveformRef.current) {
+          setVizWidth?.(waveformRef.current.clientWidth);
+        }
+
+        calculateZoom(ZOOM_SETTINGS.FULL);
+      });
+
+      ws.on("scroll", handleScroll);
+      ws.on("play", () => setIsPlaying(true));
+      ws.on("pause", () => setIsPlaying(false));
+      ws.on(
+        "audioprocess",
+        throttle((time) => setCurrentTime(time), 16)
+      );
+
+      regionsPluginRef.current.on("region-updated", (region) => {
+        updateBubble(region.id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
+      });
+
+      // Load the file and update state
+      ws.load(fileUrl);
+      setWavesurfer(ws);
+      setAudioFile(fileUrl);
+      setAudioFileName?.(file.name);
       setIsAudioLoaded?.(false);
-    };
-  }, []);
-
-  // Handle audio file loading
-  useEffect(() => {
-    if (wavesurfer && audioFile) {
-      wavesurfer.load(audioFile);
       setZoomLevel(ZOOM_SETTINGS.FULL.level);
+      setHasFile(true);
     }
-  }, [audioFile, wavesurfer]);
+  };
+
+  const handleFileRemove = () => {
+    const hasExistingBubbles = bubbles.length > 0;
+    const confirmMessage = hasExistingBubbles
+      ? "Removing the file will also delete all bubble annotations. Are you sure you want to continue?"
+      : "Are you sure you want to remove the file?";
+
+    if (window.confirm(confirmMessage)) {
+      console.log("Removing file and cleaning up");
+
+      // Destroy wavesurfer instance
+      if (wavesurfer) {
+        console.log("Destroying wavesurfer instance");
+        wavesurfer.destroy();
+        setWavesurfer(null);
+      }
+
+      // Clear all states
+      setAudioFile(null);
+      setAudioFileName?.(null);
+      setIsAudioLoaded?.(false);
+      setHasFile(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setSelectedStartTime(null);
+      setSelectedBubble?.(null);
+
+      // Clear bubbles if any exist
+      if (hasExistingBubbles) {
+        clearBubbles();
+      }
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    return () => {
+      if (wavesurfer) {
+        console.log("Cleaning up wavesurfer on unmount");
+        wavesurfer.destroy();
+      }
+    };
+  }, [wavesurfer]);
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -230,8 +305,10 @@ const WaveformVis = ({
 
   // Handle window resize
   useEffect(() => {
+    if (!wavesurfer) return;
+
     const handleResize = throttle(() => {
-      if (!wavesurfer || !waveformRef.current) return;
+      if (!waveformRef.current) return;
 
       const containerWidth = waveformRef.current.clientWidth;
       setVizWidth?.(containerWidth);
@@ -247,51 +324,6 @@ const WaveformVis = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
-
-  const toggleZoom = useCallback(() => {
-    const newZoomSetting =
-      zoomLevel === ZOOM_SETTINGS.FULL.level
-        ? ZOOM_SETTINGS.HALF
-        : ZOOM_SETTINGS.FULL;
-
-    setZoomLevel(newZoomSetting.level);
-    calculateZoom(newZoomSetting);
-  }, [zoomLevel, calculateZoom]);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const fileUrl = URL.createObjectURL(file);
-      setAudioFile(fileUrl);
-      setAudioFileName?.(file.name);
-      setIsAudioLoaded?.(false);
-      setZoomLevel(ZOOM_SETTINGS.FULL.level);
-      setHasFile(true);
-    }
-  };
-
-  const handleFileRemove = () => {
-    setAudioFile(null);
-    setAudioFileName?.(null);
-    setIsAudioLoaded?.(false);
-    setHasFile(false);
-    setCurrentTime(0);
-    setDuration(0);
-    if (wavesurfer) {
-      wavesurfer.empty();
-    }
-  };
-
-  const handlePlayPause = () => wavesurfer?.playPause();
-
-  const handleRestart = () => {
-    if (wavesurfer) {
-      wavesurfer.seekTo(0);
-      setCurrentTime(0);
-    }
-  };
-
-  // Rest of your return statement follows...
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
