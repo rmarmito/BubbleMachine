@@ -14,7 +14,7 @@ import { createID, formatTime } from "../../helpers/utils";
 import useBubbleStore from "../zustand/bubbleStore";
 import { useTheme } from "../../styles/context/ThemeContext";
 
-const BubbleCreator = ({ wavesurfer }) => {
+const BubbleCreator = ({ wavesurfer, disabled }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedLayer, setSelectedLayer] = useState("1");
@@ -89,6 +89,10 @@ const BubbleCreator = ({ wavesurfer }) => {
         </Button>
       </Tooltip>
     );
+  }
+
+  if (disabled) {
+    return null; // Or return a disabled state visualization
   }
 
   return (

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import { Box, IconButton, Paper, Stack, Button, Fab } from "@mui/material";
+import { Box, IconButton, Paper, Stack, Button } from "@mui/material";
 import {
   PlayArrow,
   Pause,
@@ -10,8 +10,7 @@ import {
   ZoomIn,
   ZoomOut,
   Upload,
-  Flag,
-  Comment,
+  Cancel,
 } from "@mui/icons-material";
 import ProgressBar from "./Progressbar";
 import CommentDisplay from "../timestamped-comments/CommentDisplay.jsx";
@@ -57,6 +56,7 @@ const WaveformVis = ({
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [hasFile, setHasFile] = useState(false);
+
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
@@ -116,27 +116,22 @@ const WaveformVis = ({
         const zoomValue =
           (containerWidth / currentDuration) * zoomSetting.level;
 
-        // Apply zoom
         wavesurfer.zoom(zoomValue);
 
-        // Get the current scroll position
         const scrollPosition = wavesurfer.getScroll();
         setScrollLeft(scrollPosition);
 
-        // Calculate visible time range based on zoom and scroll
         const secondsPerPixel =
           currentDuration / (containerWidth * zoomSetting.level);
         const visibleStartSeconds = scrollPosition * secondsPerPixel;
         const visibleEndSeconds =
           visibleStartSeconds + containerWidth * secondsPerPixel;
 
-        // Update visible time range
         setVisibleStartTime?.(formatTime(Math.max(0, visibleStartSeconds)));
         setVisibleEndTime?.(
           formatTime(Math.min(currentDuration, visibleEndSeconds))
         );
 
-        // Update regions
         updateRegions();
       } catch (error) {
         console.error("Error during zoom:", error);
@@ -159,13 +154,14 @@ const WaveformVis = ({
       dragSelection: false,
       snapToGrid: 0.1,
     });
+
     const hoverPlugin = HoverPlugin.create({
-      lineColor: "#ff0000", // Red line for hover
+      lineColor: "#ff0000",
       lineWidth: 2,
       labelBackground: "rgba(0, 0, 0, 0.75)",
       labelColor: "#fff",
       labelSize: "11px",
-      formatTimeCallback: (seconds) => formatTime(seconds), // Use your formatTime function
+      formatTimeCallback: (seconds) => formatTime(seconds),
     });
 
     const ws = WaveSurfer.create({
@@ -195,7 +191,6 @@ const WaveformVis = ({
         setVizWidth?.(waveformRef.current.clientWidth);
       }
 
-      // Initialize zoom after duration is set
       calculateZoom(ZOOM_SETTINGS.FULL);
     });
 
@@ -207,7 +202,6 @@ const WaveformVis = ({
       throttle((time) => setCurrentTime(time), 16)
     );
 
-    // Handle region updates
     regionsPluginRef.current.on("region-updated", (region) => {
       updateBubble(region.id, {
         startTime: formatTime(region.start),
@@ -239,11 +233,9 @@ const WaveformVis = ({
     const handleResize = throttle(() => {
       if (!wavesurfer || !waveformRef.current) return;
 
-      // Update container width
       const containerWidth = waveformRef.current.clientWidth;
       setVizWidth?.(containerWidth);
 
-      // Recalculate zoom based on new container width
       const currentZoomSetting =
         zoomLevel === ZOOM_SETTINGS.FULL.level
           ? ZOOM_SETTINGS.FULL
@@ -254,8 +246,8 @@ const WaveformVis = ({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [wavesurfer, zoomLevel]);
-  // Handle zoom toggle
+  }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
+
   const toggleZoom = useCallback(() => {
     const newZoomSetting =
       zoomLevel === ZOOM_SETTINGS.FULL.level
@@ -274,10 +266,24 @@ const WaveformVis = ({
       setAudioFileName?.(file.name);
       setIsAudioLoaded?.(false);
       setZoomLevel(ZOOM_SETTINGS.FULL.level);
+      setHasFile(true);
+    }
+  };
+
+  const handleFileRemove = () => {
+    setAudioFile(null);
+    setAudioFileName?.(null);
+    setIsAudioLoaded?.(false);
+    setHasFile(false);
+    setCurrentTime(0);
+    setDuration(0);
+    if (wavesurfer) {
+      wavesurfer.empty();
     }
   };
 
   const handlePlayPause = () => wavesurfer?.playPause();
+
   const handleRestart = () => {
     if (wavesurfer) {
       wavesurfer.seekTo(0);
@@ -285,28 +291,7 @@ const WaveformVis = ({
     }
   };
 
-  const markStartTime = () => {
-    if (wavesurfer) {
-      setSelectedStartTime(wavesurfer.getCurrentTime());
-    }
-  };
-
-  const markEndTime = () => {
-    if (!wavesurfer || selectedStartTime === null) return;
-
-    const endTime = wavesurfer.getCurrentTime();
-    const [start, end] = [selectedStartTime, endTime].sort((a, b) => a - b);
-
-    addBubble({
-      id: createID(),
-      startTime: formatTime(start),
-      stopTime: formatTime(end),
-      color: "#4E9EE7",
-      layer: 1,
-    });
-
-    setSelectedStartTime(null);
-  };
+  // Rest of your return statement follows...
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
@@ -336,10 +321,11 @@ const WaveformVis = ({
         <Stack spacing={2} alignItems="center">
           {/* Play Controls Group */}
           <Stack direction="row" spacing={2} alignItems="center">
-            {/* Reset and Zoom Controls */}
+            {/* Reset Control */}
             <IconButton
               onClick={handleRestart}
               size="medium"
+              disabled={!hasFile}
               sx={(theme) => ({
                 border: "1px solid",
                 borderColor:
@@ -348,10 +334,11 @@ const WaveformVis = ({
                 backgroundColor:
                   theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
                 transition: "all 0.2s ease-in-out",
+                opacity: !hasFile ? 0.5 : 1,
                 "&:hover": {
                   backgroundColor:
                     theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
-                  transform: "translateY(-2px)",
+                  transform: hasFile ? "translateY(-2px)" : "none",
                 },
               })}
             >
@@ -361,6 +348,7 @@ const WaveformVis = ({
             {/* Play/Pause Button */}
             <IconButton
               onClick={handlePlayPause}
+              disabled={!hasFile}
               sx={(theme) => ({
                 width: 56,
                 height: 56,
@@ -371,6 +359,7 @@ const WaveformVis = ({
                 color: "white",
                 border:
                   theme.palette.mode === "dark" ? "1px solid #2A2A3E" : "none",
+                opacity: !hasFile ? 0.5 : 1,
                 boxShadow:
                   theme.palette.mode === "dark"
                     ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
@@ -381,7 +370,7 @@ const WaveformVis = ({
                     theme.palette.mode === "dark"
                       ? "linear-gradient(45deg, #2A2A3E, #34495E)"
                       : theme.palette.primary.dark,
-                  transform: "translateY(-2px)",
+                  transform: hasFile ? "translateY(-2px)" : "none",
                   boxShadow:
                     theme.palette.mode === "dark"
                       ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
@@ -396,6 +385,7 @@ const WaveformVis = ({
             <IconButton
               onClick={toggleZoom}
               size="medium"
+              disabled={!hasFile}
               sx={(theme) => ({
                 border: "1px solid",
                 borderColor:
@@ -403,11 +393,12 @@ const WaveformVis = ({
                 color: theme.palette.mode === "dark" ? "#fff" : "inherit",
                 backgroundColor:
                   theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                opacity: !hasFile ? 0.5 : 1,
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
                   backgroundColor:
                     theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
-                  transform: "translateY(-2px)",
+                  transform: hasFile ? "translateY(-2px)" : "none",
                 },
               })}
             >
@@ -419,7 +410,7 @@ const WaveformVis = ({
             </IconButton>
           </Stack>
 
-          {/* Upload Button */}
+          {/* Upload/Remove Button */}
           <Box sx={{ width: "100%" }}>
             <input
               type="file"
@@ -429,31 +420,66 @@ const WaveformVis = ({
               id="audio-upload"
             />
             <label htmlFor="audio-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={<Upload />}
-                fullWidth
-                size="small"
-                sx={(theme) => ({
-                  height: "38px",
-                  borderColor:
-                    theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
-                  color: theme.palette.mode === "dark" ? "#fff" : undefined,
-                  backgroundColor:
-                    theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
-                  transition: "all 0.2s ease-in-out",
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#2C3E50" : undefined,
+              {!hasFile ? (
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<Upload />}
+                  fullWidth
+                  size="small"
+                  sx={(theme) => ({
+                    height: "38px",
                     borderColor:
-                      theme.palette.mode === "dark" ? "#34495E" : undefined,
-                    transform: "translateY(-2px)",
-                  },
-                })}
-              >
-                UPLOAD
-              </Button>
+                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
+                    color: theme.palette.mode === "dark" ? "#fff" : undefined,
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? "#2C3E50" : undefined,
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#34495E" : undefined,
+                      transform: "translateY(-2px)",
+                    },
+                  })}
+                >
+                  UPLOAD
+                </Button>
+              ) : (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFileRemove();
+                  }}
+                  variant="outlined"
+                  component="span"
+                  startIcon={<Cancel />}
+                  fullWidth
+                  size="small"
+                  color="error"
+                  sx={(theme) => ({
+                    height: "38px",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
+                    border: "2px solid",
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255, 68, 68, 0.1)"
+                          : undefined,
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#3A3A4E" : undefined,
+                      transform: "translateY(-2px)",
+                    },
+                  })}
+                >
+                  REMOVE FILE
+                </Button>
+              )}
             </label>
           </Box>
         </Stack>
@@ -464,6 +490,8 @@ const WaveformVis = ({
             width: "100%",
             maxWidth: "400px",
             mx: "auto",
+            opacity: !hasFile ? 0.5 : 1,
+            pointerEvents: !hasFile ? "none" : "auto",
           }}
         >
           <CommentDisplay wavesurfer={wavesurfer} />
@@ -478,10 +506,13 @@ const WaveformVis = ({
             "& .MuiPaper-root": {
               width: "100%",
             },
+            opacity: !hasFile ? 0.5 : 1,
+            pointerEvents: !hasFile ? "none" : "auto",
           }}
         >
           <BubbleCreator
             wavesurfer={wavesurfer}
+            disabled={!hasFile}
             onCancel={() => {
               // Optional: Add any cleanup needed when canceling bubble creation
             }}
