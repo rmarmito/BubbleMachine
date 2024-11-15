@@ -3,6 +3,7 @@ import useBubbleStore from "../zustand/bubbleStore.jsx";
 import {
   convertToMilliseconds,
   addTransparency,
+  formatTime,
 } from "../../helpers/utils.jsx";
 
 const BubbleRender = React.memo(
@@ -17,18 +18,47 @@ const BubbleRender = React.memo(
     const bubbleData = useBubbleStore((state) => state.bubbles);
     const containerRef = useRef(null);
     const [hoveredBubble, setHoveredBubble] = useState(null);
+    const [hoverInfo, setHoverInfo] = useState({
+      show: false,
+      text: "",
+      x: 0,
+      y: 0,
+    });
 
     const visStartMs = convertToMilliseconds(visibleStartTime);
     const visStopMs =
       convertToMilliseconds(visibleEndTime) ||
       convertToMilliseconds(audioDuration);
 
-    const handleMouseEnter = useCallback((id) => {
-      setHoveredBubble(id);
+    const handleMouseEnter = useCallback((bubble) => {
+      setHoveredBubble(bubble.id);
+      // Format hover text using the MM:SS:mmm format
+      const hoverText = `${formatTime(bubble.startTime)} - ${formatTime(
+        bubble.stopTime
+      )}`;
+      setHoverInfo({
+        show: true,
+        text: hoverText,
+        bubbleId: bubble.id,
+      });
     }, []);
+
+    const handleMouseMove = useCallback(
+      (e, bubble) => {
+        if (hoveredBubble === bubble.id) {
+          setHoverInfo((prev) => ({
+            ...prev,
+            x: e.clientX,
+            y: e.clientY - 30, // Position above cursor
+          }));
+        }
+      },
+      [hoveredBubble]
+    );
 
     const handleMouseLeave = useCallback(() => {
       setHoveredBubble(null);
+      setHoverInfo({ show: false, text: "", x: 0, y: 0 });
     }, []);
 
     const handleClick = useCallback(
@@ -55,20 +85,17 @@ const BubbleRender = React.memo(
 
           if (startTime >= stopTime) return null;
 
-          // Calculate position relative to visible window
           const startPosition = (startTime - visStartMs) * scale;
           const endPosition = (stopTime - visStartMs) * scale;
 
-          // Skip if completely outside visible range
           if (endPosition < 0 || startPosition > vizWidth) return null;
 
-          // Adjust position and width for partially visible bubbles
           const adjustedStart = Math.max(0, startPosition);
           const adjustedEnd = Math.min(vizWidth, endPosition);
           const bubbleWidth = Math.max(2, adjustedEnd - adjustedStart);
 
           const layer = parseInt(bubble.layer, 10) || 1;
-          const bubbleHeight = layer * 40; // Reduced height for better visualization
+          const bubbleHeight = layer * 40;
           const bubbleLevel = 6 - layer;
 
           const divStyle = {
@@ -80,17 +107,22 @@ const BubbleRender = React.memo(
             backgroundColor: addTransparency(bubble.color || "#4E9EE7", 0.6),
             borderTopLeftRadius: "80%",
             borderTopRightRadius: "80%",
-            transition: "all 0.1s ease-out",
+            transition: "all 0.2s ease-out",
             cursor: isAudioLoaded ? "pointer" : "not-allowed",
             opacity: hoveredBubble === bubble.id ? 0.8 : 1,
             zIndex: bubbleLevel,
+            boxShadow:
+              hoveredBubble === bubble.id
+                ? "0 0 8px rgba(255,0,0,0.5)"
+                : "none",
           };
 
           return (
             <div
               key={bubble.id || index}
               style={divStyle}
-              onMouseEnter={() => handleMouseEnter(bubble.id)}
+              onMouseEnter={() => handleMouseEnter(bubble)}
+              onMouseMove={(e) => handleMouseMove(e, bubble)}
               onMouseLeave={handleMouseLeave}
               onClick={() => handleClick(bubble)}
             />
@@ -106,19 +138,10 @@ const BubbleRender = React.memo(
       audioDuration,
       isAudioLoaded,
       handleMouseEnter,
+      handleMouseMove,
       handleMouseLeave,
       handleClick,
     ]);
-
-    // Add some console logging to debug
-    console.log("Bubble Data:", {
-      bubbleCount: bubbleData.length,
-      renderedCount: renderedBubbles.length,
-      vizWidth,
-      visibleStartTime,
-      visibleEndTime,
-      audioDuration,
-    });
 
     return (
       <div
@@ -131,6 +154,25 @@ const BubbleRender = React.memo(
         }}
       >
         {renderedBubbles}
+        {hoverInfo.show && (
+          <div
+            style={{
+              position: "fixed",
+              left: hoverInfo.x,
+              top: hoverInfo.y,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              color: "white",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              pointerEvents: "none",
+              zIndex: 1000,
+              transform: "translate(-50%, -100%)",
+            }}
+          >
+            {hoverInfo.text}
+          </div>
+        )}
       </div>
     );
   }

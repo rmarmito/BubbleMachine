@@ -148,6 +148,14 @@ const WaveformVis = ({
       dragSelection: false,
       snapToGrid: 0.1,
     });
+    const hoverPlugin = HoverPlugin.create({
+      lineColor: "#ff0000", // Red line for hover
+      lineWidth: 2,
+      labelBackground: "rgba(0, 0, 0, 0.75)",
+      labelColor: "#fff",
+      labelSize: "11px",
+      formatTimeCallback: (seconds) => formatTime(seconds), // Use your formatTime function
+    });
 
     const ws = WaveSurfer.create({
       container: waveformRef.current,
@@ -161,7 +169,7 @@ const WaveformVis = ({
       renderer: "WebGL2",
       pixelRatio: 1,
       normalize: true,
-      plugins: [regionsPluginRef.current, HoverPlugin.create()],
+      plugins: [regionsPluginRef.current, hoverPlugin],
     });
 
     setWavesurfer(ws);

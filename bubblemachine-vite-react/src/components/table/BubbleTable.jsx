@@ -186,7 +186,7 @@ const BubbleTable = () => {
         size: 100,
         Cell: ({ cell, row }) => (
           <ColorPickerCell
-            value={cell.getValue()}
+            value={cell.getValue() || generateRandomColor()}
             onChange={(newColor) => {
               updateBubble(row.original.id, {
                 ...row.original,
@@ -195,6 +195,35 @@ const BubbleTable = () => {
             }}
           />
         ),
+        Edit: ({ cell, column, row, table }) => {
+          // Check if we're creating a new row
+          const isCreating = table.getState().creatingRow;
+          const initialColor = isCreating
+            ? generateRandomColor()
+            : cell.getValue();
+
+          return (
+            <ColorPickerCell
+              value={initialColor}
+              onChange={(newColor) => {
+                row._valuesCache = {
+                  ...row._valuesCache,
+                  [column.id]: newColor,
+                };
+                // If we're creating, update the creating row's value
+                if (isCreating) {
+                  table.setCreatingRow({
+                    ...table.getState().creatingRow,
+                    [column.id]: newColor,
+                  });
+                }
+              }}
+            />
+          );
+        },
+        muiEditTextFieldProps: {
+          required: true,
+        },
       },
     ],
     [validationErrors, updateBubble]
