@@ -23,6 +23,7 @@ import {
 } from "../../helpers/utils.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import throttle from "lodash/throttle";
+import BubbleCreator from "../table/BubbleCreator";
 
 const ZOOM_SETTINGS = {
   FULL: {
@@ -325,7 +326,7 @@ const WaveformVis = ({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "200px 1fr 200px",
+          gridTemplateColumns: "200px 1fr 300px",
           gap: 2,
           mt: 4,
           alignItems: "start",
@@ -337,7 +338,6 @@ const WaveformVis = ({
           <Stack direction="row" spacing={2} alignItems="center">
             {/* Reset and Zoom Controls */}
             <IconButton
-              utton
               onClick={handleRestart}
               size="medium"
               sx={{
@@ -422,37 +422,26 @@ const WaveformVis = ({
           <CommentDisplay wavesurfer={wavesurfer} />
         </Box>
 
-        {/* Right Column - Region Markers */}
-        <Stack spacing={1}>
-          <Button
-            variant="contained"
-            onClick={markStartTime}
-            startIcon={<Flag />}
-            fullWidth
-            sx={{ justifyContent: "flex-start" }}
-          >
-            START
-          </Button>
-          <Button
-            variant="contained"
-            onClick={markEndTime}
-            disabled={selectedStartTime === null}
-            startIcon={<Flag />}
-            fullWidth
-            sx={{
-              justifyContent: "flex-start",
-              bgcolor: "grey.300",
-              "&:not(:disabled)": {
-                bgcolor: "primary.main",
-              },
+        {/* Right Column - Bubble Creator */}
+        <Box
+          sx={{
+            paddingRight: "16px",
+            width: "100%",
+            minWidth: 280,
+            "& .MuiPaper-root": {
+              width: "100%",
+            },
+          }}
+        >
+          <BubbleCreator
+            wavesurfer={wavesurfer}
+            onCancel={() => {
+              // Optional: Add any cleanup needed when canceling bubble creation
             }}
-          >
-            END
-          </Button>
-        </Stack>
+          />
+        </Box>
       </Box>
     </Box>
   );
 };
-
 export default WaveformVis;
