@@ -215,6 +215,27 @@ const WaveformVis = ({
     updateRegions();
   }, [selectedBubble, updateRegions]);
 
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = throttle(() => {
+      if (!wavesurfer || !waveformRef.current) return;
+
+      // Update container width
+      const containerWidth = waveformRef.current.clientWidth;
+      setVizWidth?.(containerWidth);
+
+      // Recalculate zoom based on new container width
+      const currentZoomSetting =
+        zoomLevel === ZOOM_SETTINGS.FULL.level
+          ? ZOOM_SETTINGS.FULL
+          : ZOOM_SETTINGS.HALF;
+
+      calculateZoom(currentZoomSetting);
+    }, 100);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [wavesurfer, zoomLevel]);
   // Handle zoom toggle
   const toggleZoom = useCallback(() => {
     const newZoomSetting =
