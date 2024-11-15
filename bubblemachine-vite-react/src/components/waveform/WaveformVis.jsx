@@ -44,12 +44,13 @@ const WaveformVis = ({
   const [duration, setDuration] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(ZOOM_SETTINGS.FULL.level);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
 
-  // Clear all regions except selected bubble
+  // Update regions
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
@@ -66,40 +67,76 @@ const WaveformVis = ({
     }
   }, [selectedBubble, wavesurfer]);
 
-  // Handle zoom changes
+  // Handle scroll updates
+  const handleScroll = useCallback(
+    throttle(() => {
+      if (!wavesurfer || !duration || !waveformRef.current) return;
+
+      const containerWidth = waveformRef.current.clientWidth;
+      const scrollPosition = wavesurfer.getScroll();
+      const currentZoomSetting =
+        zoomLevel === ZOOM_SETTINGS.FULL.level
+          ? ZOOM_SETTINGS.FULL
+          : ZOOM_SETTINGS.HALF;
+      const secondsPerPixel =
+        duration / (containerWidth * currentZoomSetting.level);
+
+      const visibleStartSeconds = scrollPosition * secondsPerPixel;
+      const visibleEndSeconds =
+        visibleStartSeconds + containerWidth * secondsPerPixel;
+
+      setVisibleStartTime?.(formatTime(Math.max(0, visibleStartSeconds)));
+      setVisibleEndTime?.(formatTime(Math.min(duration, visibleEndSeconds)));
+      setScrollLeft(scrollPosition);
+    }, 16),
+    [wavesurfer, duration, zoomLevel, setVisibleStartTime, setVisibleEndTime]
+  );
+
+  // Calculate zoom
   const calculateZoom = useCallback(
     (zoomSetting) => {
-      if (!wavesurfer || !duration || !waveformRef.current) return;
+      if (!wavesurfer || !waveformRef.current) return;
 
       try {
         const containerWidth = waveformRef.current.clientWidth;
-        const zoomValue = (containerWidth / duration) * zoomSetting.level;
+        const currentDuration = wavesurfer.getDuration() || duration;
+        if (!currentDuration) return;
+
+        const zoomValue =
+          (containerWidth / currentDuration) * zoomSetting.level;
 
         // Apply zoom
         wavesurfer.zoom(zoomValue);
 
-        // Calculate visible time range
-        const currentTime = wavesurfer.getCurrentTime();
-        const visibleDuration = containerWidth / zoomValue;
-        const startTime = Math.max(0, currentTime - visibleDuration / 2);
-        const endTime = Math.min(duration, startTime + visibleDuration);
+        // Get the current scroll position
+        const scrollPosition = wavesurfer.getScroll();
+        setScrollLeft(scrollPosition);
+
+        // Calculate visible time range based on zoom and scroll
+        const secondsPerPixel =
+          currentDuration / (containerWidth * zoomSetting.level);
+        const visibleStartSeconds = scrollPosition * secondsPerPixel;
+        const visibleEndSeconds =
+          visibleStartSeconds + containerWidth * secondsPerPixel;
 
         // Update visible time range
-        setVisibleStartTime?.(formatTime(startTime));
-        setVisibleEndTime?.(formatTime(endTime));
+        setVisibleStartTime?.(formatTime(Math.max(0, visibleStartSeconds)));
+        setVisibleEndTime?.(
+          formatTime(Math.min(currentDuration, visibleEndSeconds))
+        );
 
-        // Make sure regions are properly displayed
+        // Update regions
         updateRegions();
       } catch (error) {
         console.error("Error during zoom:", error);
       }
     },
     [
-      duration,
       wavesurfer,
+      updateRegions,
       setVisibleStartTime,
       setVisibleEndTime,
-      updateRegions,
+      duration,
     ]
   );
 
@@ -135,49 +172,20 @@ const WaveformVis = ({
       setAudioDuration?.(audioDuration);
       setIsAudioLoaded?.(true);
 
-      // Set initial zoom level
+      if (waveformRef.current) {
+        setVizWidth?.(waveformRef.current.clientWidth);
+      }
+
+      // Initialize zoom after duration is set
       calculateZoom(ZOOM_SETTINGS.FULL);
-
-      if (waveformRef.current) {
-        setVizWidth?.(waveformRef.current.clientWidth);
-      }
     });
 
-    ws.on("redraw", () => {
-      if (waveformRef.current) {
-        setVizWidth?.(waveformRef.current.clientWidth);
-      }
-    });
-
-    ws.on(
-      "audioprocess",
-      throttle((time) => {
-        setCurrentTime(time);
-      }, 16)
-    );
-
+    ws.on("scroll", handleScroll);
     ws.on("play", () => setIsPlaying(true));
     ws.on("pause", () => setIsPlaying(false));
-
-    // Update visible time range on scroll
     ws.on(
-      "scroll",
-      throttle(() => {
-        if (!ws) return;
-        const time = ws.getCurrentTime();
-        const visibleWidth = waveformRef.current?.clientWidth || 0;
-        const scrollDuration =
-          visibleWidth /
-          (ZOOM_SETTINGS.FULL.pixelsPerSecond *
-            (zoomLevel === ZOOM_SETTINGS.FULL.level ? 1 : 2));
-
-        setVisibleStartTime?.(
-          formatTime(Math.max(0, time - scrollDuration / 2))
-        );
-        setVisibleEndTime?.(
-          formatTime(Math.min(duration, time + scrollDuration / 2))
-        );
-      }, 100)
+      "audioprocess",
+      throttle((time) => setCurrentTime(time), 16)
     );
 
     // Handle region updates
@@ -218,37 +226,6 @@ const WaveformVis = ({
     calculateZoom(newZoomSetting);
   }, [zoomLevel, calculateZoom]);
 
-  // Handle audio file loading
-  useEffect(() => {
-    if (wavesurfer && audioFile) {
-      wavesurfer.load(audioFile);
-    }
-  }, [audioFile, wavesurfer]);
-
-  // Handle regions/bubbles
-  useEffect(() => {
-    if (!wavesurfer || !regionsPluginRef.current) return;
-
-    regionsPluginRef.current.clearRegions();
-    bubbles.forEach((bubble) => {
-      regionsPluginRef.current.addRegion({
-        id: bubble.id,
-        start: convertToSeconds(bubble.startTime),
-        end: convertToSeconds(bubble.stopTime),
-        color: colorToRGB(bubble.color),
-        resize: true,
-      });
-    });
-  }, [bubbles, wavesurfer]);
-
-  // Handle selected bubble
-  useEffect(() => {
-    if (!wavesurfer || !selectedBubble) return;
-
-    const startSeconds = convertToSeconds(selectedBubble.startTime);
-    wavesurfer.seekTo(startSeconds / duration);
-  }, [selectedBubble, wavesurfer, duration]);
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -261,7 +238,6 @@ const WaveformVis = ({
   };
 
   const handlePlayPause = () => wavesurfer?.playPause();
-
   const handleRestart = () => {
     if (wavesurfer) {
       wavesurfer.seekTo(0);
