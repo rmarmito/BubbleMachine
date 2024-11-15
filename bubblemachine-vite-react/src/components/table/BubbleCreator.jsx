@@ -79,7 +79,7 @@ const BubbleCreator = ({ wavesurfer }) => {
                 px: 1, // Add minimal padding
               }}
             >
-              {selectedStartTime !== null ? "Mark Start (Again)" : "Mark Start"}
+              {selectedStartTime !== null ? "Remark Start" : "Mark Start"}
             </Button>
           </Grid>
           <Grid item xs={6}>
