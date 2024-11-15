@@ -1,228 +1,206 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { Box, Button, IconButton, Tooltip, MenuItem } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ColorPickerCell from "./ColorPickerCell"; // Update import
-import useBubbleStore from "../zustand/bubbleStore.jsx";
-import { createID, generateRandomColor } from "../../helpers/utils.jsx";
+import useBubbleStore from "../zustand/bubbleStore";
+import { createID } from "../../helpers/utils";
+
+// Time validation function
+const validateTime = (value) => {
+  if (!value) return false;
+  return String(value).match(
+    /^((0|[0-5][0-9]?)\:)?([0-5][0-9])(:([0-9][0-9][0-9]))?$/
+  );
+};
 
 const BubbleTable = () => {
   const [validationErrors, setValidationErrors] = useState({});
-  const bubbles = useBubbleStore((state) => state.bubbles);
-  const addBubble = useBubbleStore((state) => state.addBubble);
-  const updateBubble = useBubbleStore((state) => state.updateBubble);
-  const deleteBubble = useBubbleStore((state) => state.deleteBubble);
+  const { bubbles, addBubble, updateBubble, deleteBubble } = useBubbleStore();
+
+  // Time format helper component
+  const TimeFormatHelper = () => (
+    <div className="text-xs text-gray-500 mt-1">
+      Format: MM:SS:mmm (e.g., 01:30:000)
+    </div>
+  );
 
   const columns = useMemo(
     () => [
       {
         accessorKey: "layer",
         header: "Layer",
-        editVariant: "select",
-        editSelectOptions: ["1", "2", "3", "4", "5", "6"],
+        size: 100,
         muiEditTextFieldProps: {
           select: true,
           error: !!validationErrors?.layer,
           helperText: validationErrors?.layer,
-          onChange: (event) => {
-            const newValue = event.target.value;
-            // If inside editing row
-            if (table.getState().editingRow) {
-              table.setEditingRow({
-                ...table.getState().editingRow,
-                layer: newValue,
-              });
-            }
-          },
         },
+        Edit: ({ row }) => (
+          <select
+            value={row._valuesCache.layer || "1"}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              // Update both the editing cache and the row values
+              row._valuesCache.layer = newValue;
+              row
+                .getAllCells()
+                .find((cell) => cell.column.id === "layer")
+                .setValue(newValue);
+            }}
+            className="w-full p-2 border rounded"
+          >
+            {[1, 2, 3, 4, 5, 6].map((num) => (
+              <option key={num} value={String(num)}>
+                Layer {num}
+              </option>
+            ))}
+          </select>
+        ),
+        Cell: ({ cell }) => `Layer ${cell.getValue() || 1}`,
       },
       {
         accessorKey: "bubbleName",
-        header: "Bubble Name",
+        header: "Name",
+        size: 150,
         muiEditTextFieldProps: {
           required: true,
           error: !!validationErrors?.bubbleName,
           helperText: validationErrors?.bubbleName,
-          onFocus: () =>
-            setValidationErrors({
-              ...validationErrors,
-              bubbleName: undefined,
-            }),
         },
       },
       {
         accessorKey: "startTime",
         header: "Start Time",
+        size: 150,
         muiEditTextFieldProps: {
           required: true,
           error: !!validationErrors?.startTime,
-          helperText: validationErrors?.startTime,
-          onFocus: () =>
-            setValidationErrors({
-              ...validationErrors,
-              startTime: undefined,
-            }),
+          helperText: validationErrors?.startTime || <TimeFormatHelper />,
+          placeholder: "00:00:000",
         },
       },
       {
         accessorKey: "stopTime",
         header: "Stop Time",
+        size: 150,
         muiEditTextFieldProps: {
           required: true,
           error: !!validationErrors?.stopTime,
-          helperText: validationErrors?.stopTime,
-          onFocus: () =>
-            setValidationErrors({
-              ...validationErrors,
-              stopTime: undefined,
-            }),
+          helperText: validationErrors?.stopTime || <TimeFormatHelper />,
+          placeholder: "00:00:000",
         },
       },
-      {
-        accessorKey: "color",
-        header: "Color",
-        Cell: ({ cell, row }) => (
-          <ColorPickerCell
-            value={cell.getValue()}
-            onChange={(newColor) => {
-              updateBubble(row.original.id, {
-                ...row.original,
-                color: newColor,
-              });
-            }}
-          />
-        ),
-        Edit: ({ cell, column, row }) => (
-          <ColorPickerCell
-            value={cell.getValue()}
-            onChange={(newColor) => {
-              row.setEditingRow({
-                ...row._valuesCache,
-                [column.id]: newColor,
-              });
-            }}
-          />
-        ),
-      },
     ],
-    [validationErrors, updateBubble]
+    [validationErrors]
   );
 
-  const handleCreateBubble = async ({ values, table }) => {
+  const validateBubble = (bubble) => {
+    const errors = {};
+    if (!bubble.bubbleName?.trim()) {
+      errors.bubbleName = "Name is required";
+    }
+    if (!validateTime(bubble.startTime)) {
+      errors.startTime = "Invalid time format (MM:SS:mmm)";
+    }
+    if (!validateTime(bubble.stopTime)) {
+      errors.stopTime = "Invalid time format (MM:SS:mmm)";
+    }
+    return errors;
+  };
+
+  const handleCreateBubble = ({ values, table }) => {
     const newValidationErrors = validateBubble(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
+    if (Object.keys(newValidationErrors).length > 0) {
       setValidationErrors(newValidationErrors);
       return;
     }
 
     const newBubble = {
-      ...values,
       id: createID(),
-      layer: values.layer || "1", // Ensure layer is set
-      color: generateRandomColor(),
+      layer: values.layer || "1",
+      bubbleName: values.bubbleName,
+      startTime: values.startTime,
+      stopTime: values.stopTime,
     };
 
-    setValidationErrors({});
     addBubble(newBubble);
+    setValidationErrors({});
     table.setCreatingRow(null);
   };
-  const handleSaveBubble = async ({ values, table }) => {
+
+  const handleSaveBubble = ({ values, table }) => {
     const newValidationErrors = validateBubble(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
+    if (Object.keys(newValidationErrors).length > 0) {
       setValidationErrors(newValidationErrors);
       return;
     }
-    setValidationErrors({});
-    updateBubble(values.id, values);
-    table.setEditingRow(null);
-  };
 
-  const openDeleteConfirmModal = (row) => {
-    if (window.confirm("Are you sure you want to delete this bubble?")) {
-      deleteBubble(row.original.id);
-    }
+    // Ensure we're passing all values including the layer
+    const updatedValues = {
+      ...values,
+      layer: values.layer || "1", // Fallback to "1" if layer is somehow undefined
+    };
+
+    console.log("Saving bubble with values:", updatedValues); // Debug log
+    updateBubble(values.id, updatedValues);
+    setValidationErrors({});
+    table.setEditingRow(null);
   };
 
   const table = useMaterialReactTable({
     columns,
     data: bubbles,
+    enableEditing: true,
+    enableRowSelection: false,
     createDisplayMode: "row",
     editDisplayMode: "row",
-    enableEditing: true,
     positionActionsColumn: "last",
-    initialState: { columnVisibility: { id: true } },
-    getRowId: (row) => row.id,
-    enableToolbarInternalActions: false,
     enableColumnActions: false,
     enableColumnFilters: false,
     enablePagination: false,
-    enableSorting: false,
-    muiToolbarAlertBannerProps: undefined,
-    muiTableContainerProps: {
-      sx: {
-        minHeight: "500px",
-      },
+    enableSorting: true,
+    muiTableBodyCellProps: {
+      sx: { fontSize: "0.875rem" },
     },
-    onCreatingRowCancel: () => setValidationErrors({}),
-    onCreatingRowSave: handleCreateBubble,
-    onEditingRowCancel: () => setValidationErrors({}),
-    onEditingRowSave: handleSaveBubble,
     renderRowActions: ({ row, table }) => (
-      <Box sx={{ display: "flex", gap: "1rem" }}>
+      <Box sx={{ display: "flex", gap: "0.5rem" }}>
         <Tooltip title="Edit">
-          <IconButton onClick={() => table.setEditingRow(row)}>
+          <IconButton
+            onClick={() => {
+              // Ensure we have the current layer value when starting to edit
+              row._valuesCache = { ...row.original };
+              table.setEditingRow(row);
+            }}
+          >
             <EditIcon />
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete">
-          <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
+          <IconButton
+            color="error"
+            onClick={() => deleteBubble(row.original.id)}
+          >
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       </Box>
     ),
     renderTopToolbarCustomActions: ({ table }) => (
-      <Button
-        variant="contained"
-        onClick={() => {
-          table.setCreatingRow(true);
-        }}
-      >
-        Create New Bubble
+      <Button variant="contained" onClick={() => table.setCreatingRow(true)}>
+        Create Bubble
       </Button>
     ),
-    state: {
-      isLoading: false,
-      isSaving: false,
-      showAlertBanner: false,
-      showProgressBars: false,
-    },
+    onCreatingRowCancel: () => setValidationErrors({}),
+    onCreatingRowSave: handleCreateBubble,
+    onEditingRowCancel: () => setValidationErrors({}),
+    onEditingRowSave: handleSaveBubble,
   });
 
   return <MaterialReactTable table={table} />;
 };
 
 export default BubbleTable;
-
-const validateRequired = (value) => String(value).length > 0;
-const validateTime = (value) =>
-  value !== undefined &&
-  value !== null &&
-  String(value).length > 0 &&
-  String(value).match(
-    /^((0|[0-5][0-9]?)\:)?([0-5][0-9])(:([0-9][0-9][0-9]))?$/
-  );
-
-function validateBubble(bubble) {
-  return {
-    bubbleName: !validateRequired(bubble.bubbleName)
-      ? "Bubble name is Required"
-      : "",
-    startTime: !validateTime(bubble.startTime) ? "Start Time is Required" : "",
-    stopTime: !validateTime(bubble.stopTime) ? "Stop Time is Required" : "",
-  };
-}
