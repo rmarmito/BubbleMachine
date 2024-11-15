@@ -2,7 +2,17 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import { Button } from "@mui/material";
+import { Box, IconButton, Paper, Stack, Button, Fab } from "@mui/material";
+import {
+  PlayArrow,
+  Pause,
+  RestartAlt,
+  ZoomIn,
+  ZoomOut,
+  Upload,
+  Flag,
+  Comment,
+} from "@mui/icons-material";
 import ProgressBar from "./Progressbar";
 import CommentDisplay from "../timestamped-comments/CommentDisplay.jsx";
 import {
@@ -298,58 +308,126 @@ const WaveformVis = ({
   };
 
   return (
-    <div className="waveform-container p-5 pt-0 text-center">
-      <div className="relative inline-block w-full">
+    <Box sx={{ width: "100%", p: 0 }}>
+      {/* Waveform */}
+      <div className="relative inline-block w-full mb-4">
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
       </div>
 
+      {/* Progress Bar */}
       <ProgressBar
         currentTime={currentTime}
         duration={duration}
         wavesurfer={wavesurfer}
       />
 
-      <div className="relative mt-2.5">
-        <CommentDisplay wavesurfer={wavesurfer} />
-      </div>
+      {/* Three Column Layout */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "200px 1fr 200px",
+          gap: 2,
+          mt: 4,
+          alignItems: "start",
+        }}
+      >
+        {/* Left Column - Playback Controls */}
+        <Stack spacing={2} alignItems="center">
+          {/* Play/Pause Button */}
+          <IconButton
+            color="primary"
+            onClick={handlePlayPause}
+            sx={{
+              width: 56,
+              height: 56,
+              bgcolor: "primary.main",
+              color: "white",
+              "&:hover": {
+                bgcolor: "primary.dark",
+              },
+            }}
+          >
+            {isPlaying ? <Pause /> : <PlayArrow />}
+          </IconButton>
 
-      <div className="flex gap-2.5 justify-center mt-2.5">
-        <Button variant="contained" color="primary" onClick={handlePlayPause}>
-          {isPlaying ? "Pause" : "Play"}
-        </Button>
+          {/* Reset and Zoom Controls */}
+          <Stack direction="row" spacing={1}>
+            <IconButton onClick={handleRestart} size="medium">
+              <RestartAlt />
+            </IconButton>
+            <IconButton onClick={toggleZoom} size="medium">
+              {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
+                <ZoomIn />
+              ) : (
+                <ZoomOut />
+              )}
+            </IconButton>
+          </Stack>
 
-        <Button variant="contained" color="primary" onClick={handleRestart}>
-          Reset
-        </Button>
+          {/* Upload Button */}
+          <Box sx={{ width: "100%" }}>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+              id="audio-upload"
+            />
+            <label htmlFor="audio-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                startIcon={<Upload />}
+                fullWidth
+                size="small"
+              >
+                UPLOAD
+              </Button>
+            </label>
+          </Box>
+        </Stack>
 
-        <Button variant="contained" color="primary" onClick={toggleZoom}>
-          {zoomLevel === ZOOM_SETTINGS.FULL.level ? "Zoom In" : "Zoom Out"}
-        </Button>
-
-        <Button variant="contained" color="primary" component="label">
-          Upload Audio
-          <input
-            type="file"
-            hidden
-            accept="audio/*"
-            onChange={handleFileChange}
-          />
-        </Button>
-
-        <Button variant="contained" color="primary" onClick={markStartTime}>
-          Mark Start
-        </Button>
-
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={markEndTime}
-          disabled={selectedStartTime === null}
+        {/* Center Column - Comments */}
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: "400px",
+            mx: "auto",
+          }}
         >
-          Mark End
-        </Button>
-      </div>
-    </div>
+          <CommentDisplay wavesurfer={wavesurfer} />
+        </Box>
+
+        {/* Right Column - Region Markers */}
+        <Stack spacing={1}>
+          <Button
+            variant="contained"
+            onClick={markStartTime}
+            startIcon={<Flag />}
+            fullWidth
+            sx={{ justifyContent: "flex-start" }}
+          >
+            START
+          </Button>
+          <Button
+            variant="contained"
+            onClick={markEndTime}
+            disabled={selectedStartTime === null}
+            startIcon={<Flag />}
+            fullWidth
+            sx={{
+              justifyContent: "flex-start",
+              bgcolor: "grey.300",
+              "&:not(:disabled)": {
+                bgcolor: "primary.main",
+              },
+            }}
+          >
+            END
+          </Button>
+        </Stack>
+      </Box>
+    </Box>
   );
 };
 
