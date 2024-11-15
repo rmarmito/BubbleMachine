@@ -56,7 +56,7 @@ const WaveformVis = ({
   const [zoomLevel, setZoomLevel] = useState(ZOOM_SETTINGS.FULL.level);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [scrollLeft, setScrollLeft] = useState(0);
-
+  const [hasFile, setHasFile] = useState(false);
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
@@ -340,52 +340,83 @@ const WaveformVis = ({
             <IconButton
               onClick={handleRestart}
               size="medium"
-              sx={{
+              sx={(theme) => ({
                 border: "1px solid",
-                borderColor: "grey.300",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+                color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  bgcolor: "grey.100",
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
+                  transform: "translateY(-2px)",
                 },
-              }}
+              })}
             >
               <RestartAlt />
             </IconButton>
 
             {/* Play/Pause Button */}
             <IconButton
-              color="primary"
               onClick={handlePlayPause}
-              sx={{
+              sx={(theme) => ({
                 width: 56,
                 height: 56,
-                bgcolor: "primary.main",
+                background:
+                  theme.palette.mode === "dark"
+                    ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
+                    : theme.palette.primary.main,
                 color: "white",
+                border:
+                  theme.palette.mode === "dark" ? "1px solid #2A2A3E" : "none",
+                boxShadow:
+                  theme.palette.mode === "dark"
+                    ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
+                    : "0 3px 5px 2px rgba(33, 203, 243, .3)",
+                transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  bgcolor: "primary.dark",
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "linear-gradient(45deg, #2A2A3E, #34495E)"
+                      : theme.palette.primary.dark,
+                  transform: "translateY(-2px)",
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
+                      : "0 4px 8px 2px rgba(33, 203, 243, .4)",
                 },
-              }}
+              })}
             >
               {isPlaying ? <Pause /> : <PlayArrow />}
             </IconButton>
-            <Stack direction="row" spacing={1}>
-              <IconButton
-                onClick={toggleZoom}
-                size="medium"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "grey.300",
-                  "&:hover": {
-                    bgcolor: "grey.100",
-                  },
-                }}
-              >
-                {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
-                  <ZoomIn />
-                ) : (
-                  <ZoomOut />
-                )}
-              </IconButton>
-            </Stack>
+
+            {/* Zoom Control */}
+            <IconButton
+              onClick={toggleZoom}
+              size="medium"
+              sx={(theme) => ({
+                border: "1px solid",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+                color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
+                  transform: "translateY(-2px)",
+                },
+              })}
+            >
+              {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
+                <ZoomIn />
+              ) : (
+                <ZoomOut />
+              )}
+            </IconButton>
           </Stack>
 
           {/* Upload Button */}
@@ -404,6 +435,22 @@ const WaveformVis = ({
                 startIcon={<Upload />}
                 fullWidth
                 size="small"
+                sx={(theme) => ({
+                  height: "38px",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
+                  color: theme.palette.mode === "dark" ? "#fff" : undefined,
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#2C3E50" : undefined,
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#34495E" : undefined,
+                    transform: "translateY(-2px)",
+                  },
+                })}
               >
                 UPLOAD
               </Button>
@@ -444,4 +491,5 @@ const WaveformVis = ({
     </Box>
   );
 };
+
 export default WaveformVis;
