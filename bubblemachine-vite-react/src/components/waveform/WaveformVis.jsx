@@ -434,7 +434,7 @@ const WaveformVis = ({
         {/* Column 3 - Comment Display */}
         <Box
           sx={{
-            maxWidth: "400px",
+            maxWidth: "700px",
             width: "100%",
           }}
         >
