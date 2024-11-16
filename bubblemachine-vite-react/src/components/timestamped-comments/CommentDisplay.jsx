@@ -1,20 +1,23 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
-  Button,
+  IconButton,
   TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Paper,
-  IconButton,
+  Typography,
+  Button,
 } from "@mui/material";
 import { Comment } from "@mui/icons-material";
 import { DateTime } from "luxon";
 import throttle from "lodash/throttle";
+import { useTheme } from "@mui/material/styles";
 
 const CommentDisplay = ({ wavesurfer }) => {
+  const theme = useTheme();
   const [comments, setComments] = useState([]);
   const [currentComment, setCurrentComment] = useState(null);
   const [commentDisplayTime, setCommentDisplayTime] = useState(null);
@@ -81,42 +84,84 @@ const CommentDisplay = ({ wavesurfer }) => {
     <Paper
       elevation={1}
       sx={{
-        p: 2,
-        height: "100px",
-        overflow: "auto",
+        p: 1,
+        width: "100%",
+        maxWidth: "600px",
+        height: "75px",
         display: "flex",
-        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         position: "relative",
+        overflow: "hidden",
+        borderRadius: "12px",
+        border: "1px solid",
+        borderColor:
+          theme.palette.mode === "dark" ? "#2A2A3E" : "rgba(0, 0, 0, 0.12)",
       }}
     >
-      {/* Comments Display */}
-      <Box sx={{ flex: 1, overflow: "auto" }}>
-        {currentComment && (
-          <Box
+      {/* Current Comment Display */}
+      {currentComment && (
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            maxWidth: "100%",
+            maxHeight: "100%",
+            bgcolor: theme.palette.action.hover,
+            borderRadius: 2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "pre-wrap",
+            wordWrap: "break-word",
+            textAlign: "center",
+          }}
+        >
+          <Typography
+            variant="body2"
             sx={{
-              p: 1,
-              mb: 1,
-              bgcolor: "grey.100",
-              borderRadius: 1,
-              display: "inline-block",
+              fontSize: "1rem",
+              lineHeight: 1.2,
             }}
           >
             {currentComment.text}
-          </Box>
-        )}
-      </Box>
+          </Typography>
+        </Box>
+      )}
 
-      {/* Add Comment Button */}
+      {/* Add Comment IconButton */}
       <IconButton
-        color="primary"
         onClick={() => setIsDialogOpen(true)}
-        sx={{ position: "absolute", right: 8, bottom: 8 }}
+        disabled={!wavesurfer}
+        sx={(theme) => ({
+          position: "absolute",
+          bottom: 8,
+          right: 8,
+          border: "1px solid",
+          borderColor: theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+          color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+          backgroundColor:
+            theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": {
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
+            transform: !wavesurfer ? "none" : "translateY(-2px)",
+          },
+          opacity: !wavesurfer ? 0.5 : 1,
+        })}
       >
         <Comment />
       </IconButton>
 
       {/* Comment Dialog */}
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add a Comment</DialogTitle>
         <DialogContent>
           <TextField
@@ -124,16 +169,30 @@ const CommentDisplay = ({ wavesurfer }) => {
             margin="dense"
             label="Comment"
             fullWidth
+            multiline
+            minRows={3}
             value={newCommentText}
             onChange={(e) => setNewCommentText(e.target.value)}
+            variant="outlined"
+            InputProps={{
+              style: { color: theme.palette.text.primary },
+            }}
+            InputLabelProps={{
+              style: { color: theme.palette.text.secondary },
+            }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsDialogOpen(false)} color="secondary">
+          <Button onClick={() => setIsDialogOpen(false)} color="inherit">
             Cancel
           </Button>
-          <Button onClick={handleAddComment} color="primary">
-            Add
+          <Button
+            onClick={handleAddComment}
+            color="primary"
+            variant="contained"
+            disabled={!newCommentText.trim()}
+          >
+            Add Comment
           </Button>
         </DialogActions>
       </Dialog>
