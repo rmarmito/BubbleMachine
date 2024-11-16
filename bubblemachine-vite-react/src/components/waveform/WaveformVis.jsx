@@ -40,7 +40,7 @@ const WaveformVis = ({
   selectedBubble,
   setIsAudioLoaded,
   setSelectedBubble,
-  audioFile, // Receive audioFile as a prop
+  audioFile,
 }) => {
   // Refs
   const waveformRef = useRef(null);
@@ -236,7 +236,7 @@ const WaveformVis = ({
       setIsAudioLoaded?.(false);
       setZoomLevel(ZOOM_SETTINGS.FULL.level);
     } else {
-      // If audioFile is null, destroy WaveSurfer instance
+      // If audioFile is null, destroy WaveSurfer instance and clear all data
       if (wavesurfer) {
         wavesurfer.destroy();
         setWavesurfer(null);
@@ -244,8 +244,9 @@ const WaveformVis = ({
       setIsAudioLoaded?.(false);
       setDuration(0);
       setCurrentTime(0);
+      setSelectedBubble?.(null); // Clear selected bubble
+      clearBubbles(); // Clear all bubbles from the store
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioFile]);
 
   // Cleanup on unmount

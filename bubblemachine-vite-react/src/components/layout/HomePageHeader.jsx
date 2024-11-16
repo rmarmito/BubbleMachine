@@ -17,7 +17,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     backgroundColor: darkMode ? "#1A1A2E" : "#2C3E50",
     borderBottom: `1px solid ${darkMode ? "#2A2A3E" : "#34495E"}`,
     display: "flex",
-    justifyContent: "flex-end", // Align everything to the right
+    justifyContent: "flex-end",
     alignItems: "center",
     gap: 2,
     marginBottom: 2,
