@@ -84,7 +84,7 @@ export default function HomePage() {
           <Box
             sx={{
               width: "100%",
-              height: "200px",
+              height: "250px",
               position: "relative",
               marginBottom: -2,
             }}

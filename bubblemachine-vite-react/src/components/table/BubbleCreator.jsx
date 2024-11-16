@@ -60,7 +60,7 @@ const BubbleCreator = ({ wavesurfer, disabled }) => {
           startIcon={<AddCircleOutline />}
           fullWidth
           sx={{
-            height: "42px",
+            height: "75px",
             borderRadius: "21px 8px 8px 21px",
             background: darkMode
               ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
