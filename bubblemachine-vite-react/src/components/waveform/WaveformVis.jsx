@@ -164,13 +164,9 @@ const WaveformVis = ({
 
   // Initialize WaveSurfer when audioFile changes
   useEffect(() => {
-    if (audioFile) {
-      // If there's an existing instance, destroy it first
-      if (wavesurfer) {
-        wavesurfer.destroy();
-        setWavesurfer(null);
-      }
+    if (!waveformRef.current) return;
 
+    const initializeWavesurfer = () => {
       // Initialize new WaveSurfer instance
       regionsPluginRef.current = RegionsPlugin.create({
         dragSelection: false,
@@ -203,6 +199,7 @@ const WaveformVis = ({
 
       // Set up event listeners
       ws.on("ready", () => {
+        console.log("WaveSurfer ready event fired");
         const audioDuration = ws.getDuration();
         setDuration(audioDuration);
         setAudioDuration?.(audioDuration);
@@ -230,33 +227,48 @@ const WaveformVis = ({
         });
       });
 
-      // Load the file and update state
-      ws.load(audioFile);
+      return ws;
+    };
+
+    // Cleanup and initialize
+    if (audioFile) {
+      // Cleanup previous instance if it exists
+      if (wavesurfer) {
+        wavesurfer.destroy();
+      }
+
+      // Initialize new instance
+      const ws = initializeWavesurfer();
       setWavesurfer(ws);
-      setIsAudioLoaded?.(false);
+      ws.load(audioFile);
       setZoomLevel(ZOOM_SETTINGS.FULL.level);
     } else {
-      // If audioFile is null, destroy WaveSurfer instance and clear all data
+      // Handle file removal
       if (wavesurfer) {
         wavesurfer.destroy();
         setWavesurfer(null);
       }
+
+      // Reset states
       setIsAudioLoaded?.(false);
       setDuration(0);
       setCurrentTime(0);
-      setSelectedBubble?.(null); // Clear selected bubble
-      clearBubbles(); // Clear all bubbles from the store
-    }
-  }, [audioFile]);
+      setSelectedBubble?.(null);
+      clearBubbles();
 
-  // Cleanup on unmount
-  useEffect(() => {
+      // Clear DOM
+      if (waveformRef.current) {
+        waveformRef.current.innerHTML = "";
+      }
+    }
+
+    // Cleanup on effect cleanup
     return () => {
       if (wavesurfer) {
         wavesurfer.destroy();
       }
     };
-  }, [wavesurfer]);
+  }, [audioFile]); // Minimal dependencies to prevent re-runs
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -294,7 +306,6 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
-
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
