@@ -14,6 +14,8 @@ export default function HomePage() {
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
   const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+  // Add state for wavesurfer instance
+  const [wavesurfer, setWavesurfer] = useState(null);
 
   return (
     <div>
@@ -35,9 +37,9 @@ export default function HomePage() {
           <Box
             sx={{
               width: "100%",
-              height: "200px", // Space for bubbles
+              height: "200px",
               position: "relative",
-              marginBottom: -2, // Reduce gap between bubbles and waveform
+              marginBottom: -2,
             }}
           >
             <BubbleRender
@@ -49,7 +51,6 @@ export default function HomePage() {
               isAudioLoaded={isAudioLoaded}
             />
           </Box>
-
           {/* Waveform area */}
           <Box sx={{ width: "100%" }}>
             <WaveformVis
@@ -61,20 +62,21 @@ export default function HomePage() {
               setAudioFileName={setAudioFileName}
               setIsAudioLoaded={setIsAudioLoaded}
               setSelectedBubble={setSelectedBubble}
+              parentSetWavesurfer={setWavesurfer}
+              wavesurfer={wavesurfer}
             />
           </Box>
         </Box>
       </PrimaryContainer>
-
       <PrimaryContainer
         label="New Bubble"
         labelColor="white"
-        title=""
+        title={"All Bubbles"}
         titleColor="#FF0000"
+        info={"Contains all bubble information across all layers"}
       >
-        <BubbleTable isAudioLoaded={isAudioLoaded} />
+        <BubbleTable isAudioLoaded={isAudioLoaded} wavesurfer={wavesurfer} />
       </PrimaryContainer>
-
       {[...Array(6)].map((_, index) => (
         <PopUpLayer key={index} layer={`${index + 1}`} />
       ))}

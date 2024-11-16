@@ -392,17 +392,7 @@ const BubbleTable = () => {
         )}
       </Box>
     ),
-    renderTopToolbarCustomActions: ({ table }) => (
-      <StyledButton
-        variant="contained"
-        onClick={() => table.setCreatingRow(true)}
-        startIcon={<AddCircleOutlineIcon />}
-        sx={{ m: 1 }}
-      >
-        Create Bubble
-      </StyledButton>
-    ),
-    //
+
     onCreatingRowCancel: () => setValidationErrors({}),
     onCreatingRowSave: handleCreateBubble,
     onEditingRowCancel: () => setValidationErrors({}),
