@@ -140,7 +140,8 @@ const WaveformVis = ({
       setVisibleStartTime,
       setVisibleEndTime,
       duration,
-    ]
+      bubbles,
+    ] // Added bubbles here
   );
 
   const toggleZoom = useCallback(() => {
@@ -268,7 +269,7 @@ const WaveformVis = ({
         wavesurfer.destroy();
       }
     };
-  }, [audioFile]); // Minimal dependencies to prevent re-runs
+  }, [audioFile]);
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -306,6 +307,17 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
+
+  // Add this effect near your other useEffects
+  useEffect(() => {
+    if (wavesurfer && bubbles.length > 0) {
+      // Slight delay to ensure DOM is ready
+      setTimeout(() => {
+        calculateZoom(ZOOM_SETTINGS.FULL);
+      }, 100);
+    }
+  }, [bubbles.length, wavesurfer]); // Only run when bubbles length changes or wavesurfer changes
+
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}

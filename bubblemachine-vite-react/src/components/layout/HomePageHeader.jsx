@@ -88,7 +88,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   // Handle Import
   const handleImport = () => {
     if (!hasFile) {
-      alert("Please upload an audio file before importing bubble data");
+      alert("Please load an audio file before importing bubble data");
       return;
     }
 
@@ -144,7 +144,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   // Handle Export
   const handleExport = () => {
     if (!hasFile) {
-      alert("Please upload an audio file before exporting bubble data");
+      alert("Please load an audio file before exporting bubble data");
       return;
     }
 
@@ -186,7 +186,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
       {/* Control buttons - now all in one group */}
       <Stack direction="row" spacing={2} alignItems="center">
         <Tooltip
-          title={!hasFile ? "Upload audio file first" : "Import Bubble data"}
+          title={!hasFile ? "Load audio file first" : "Import Bubble data"}
         >
           <span>
             <Button
@@ -202,7 +202,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
         </Tooltip>
 
         <Tooltip
-          title={!hasFile ? "Upload audio file first" : "Export Bubble data"}
+          title={!hasFile ? "Load audio file first" : "Export Bubble data"}
         >
           <span>
             <Button
@@ -226,14 +226,14 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
         />
         <label htmlFor="audio-upload">
           {!hasFile ? (
-            <Tooltip title="Upload audio file">
+            <Tooltip title="Load audio file">
               <Button
                 variant="outlined"
                 component="span"
                 startIcon={<Upload />}
                 sx={uploadButtonStyles}
               >
-                Upload Audio
+                Load Audio
               </Button>
             </Tooltip>
           ) : (
