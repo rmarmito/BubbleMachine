@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
+  Box,
   Button,
   TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Paper,
+  IconButton,
 } from "@mui/material";
+import { Comment } from "@mui/icons-material";
 import { DateTime } from "luxon";
 import throttle from "lodash/throttle";
 
@@ -36,13 +40,12 @@ const CommentDisplay = ({ wavesurfer }) => {
       if (currentComment && commentDisplayTime) {
         const now = DateTime.now();
         const diffInSeconds = now.diff(commentDisplayTime, "seconds").seconds;
-
         if (diffInSeconds >= 5) {
           setCurrentComment(null);
           setCommentDisplayTime(null);
         }
       }
-    }, 200), // Throttling the audio process event to every 200ms
+    }, 200),
     [comments, currentComment, commentDisplayTime]
   );
 
@@ -51,11 +54,7 @@ const CommentDisplay = ({ wavesurfer }) => {
       const onAudioProcess = (time) => {
         updateCurrentComment(time);
       };
-
-      // Subscribe to the audioprocess event
       wavesurfer.on("audioprocess", onAudioProcess);
-
-      // Cleanup on unmount or when wavesurfer changes
       return () => {
         wavesurfer.un("audioprocess", onAudioProcess);
       };
@@ -63,51 +62,61 @@ const CommentDisplay = ({ wavesurfer }) => {
   }, [wavesurfer, updateCurrentComment]);
 
   const handleAddComment = () => {
-    if (wavesurfer) {
+    if (wavesurfer && newCommentText) {
       const currentTime = wavesurfer.getCurrentTime();
-      if (newCommentText) {
-        setComments((prevComments) => [
-          ...prevComments,
-          {
-            id: Date.now(),
-            timestamp: currentTime,
-            text: newCommentText,
-          },
-        ]);
-        setNewCommentText(""); // Clear text field
-      }
-      setIsDialogOpen(false); // Close dialog
+      setComments((prevComments) => [
+        ...prevComments,
+        {
+          id: Date.now(),
+          timestamp: currentTime,
+          text: newCommentText,
+        },
+      ]);
+      setNewCommentText("");
+      setIsDialogOpen(false);
     }
   };
 
-  const openCommentDialog = () => setIsDialogOpen(true);
-  const closeCommentDialog = () => setIsDialogOpen(false);
-
   return (
-    <div>
-      {/* Display the current comment */}
-      {currentComment && (
-        <div
-          style={{
-            marginTop: "10px",
-            fontSize: "16px",
-            fontWeight: "bold",
-            padding: "10px",
-            backgroundColor: "#f0f0f0",
-            borderRadius: "5px",
-            display: "inline-block",
-          }}
-        >
-          {currentComment.text}
-        </div>
-      )}
-      <div />
-      <Button variant="contained" color="primary" onClick={openCommentDialog}>
-        Add Comment
-      </Button>
+    <Paper
+      elevation={1}
+      sx={{
+        p: 2,
+        height: "100px",
+        overflow: "auto",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+      }}
+    >
+      {/* Comments Display */}
+      <Box sx={{ flex: 1, overflow: "auto" }}>
+        {currentComment && (
+          <Box
+            sx={{
+              p: 1,
+              mb: 1,
+              bgcolor: "grey.100",
+              borderRadius: 1,
+              display: "inline-block",
+            }}
+          >
+            {currentComment.text}
+          </Box>
+        )}
+      </Box>
 
-      {/* Comment input dialog */}
-      <Dialog open={isDialogOpen} onClose={closeCommentDialog}>
+      {/* Add Comment Button */}
+      <IconButton
+        color="primary"
+        onClick={() => setIsDialogOpen(true)}
+        sx={{ position: "absolute", right: 8, bottom: 8 }}
+      >
+        <Comment />
+      </IconButton>
+
+      {/* Comment Dialog */}
+      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <DialogTitle>Add a Comment</DialogTitle>
         <DialogContent>
           <TextField
@@ -120,7 +129,7 @@ const CommentDisplay = ({ wavesurfer }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCommentDialog} color="secondary">
+          <Button onClick={() => setIsDialogOpen(false)} color="secondary">
             Cancel
           </Button>
           <Button onClick={handleAddComment} color="primary">
@@ -128,7 +137,7 @@ const CommentDisplay = ({ wavesurfer }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Paper>
   );
 };
 

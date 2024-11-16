@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import BubbleRender from "../components/bubbles/BubbleRender";
 import PrimaryContainer from "../components/layout/PrimaryContainer";
 import WaveformVis from "../components/waveform/WaveformVis";
-import BubbleTable from "../components/table/ZTable";
+import BubbleTable from "../components/table/BubbleTable";
 import PopUpLayer from "../components/table/PopUpLayer";
 
 export default function HomePage() {
@@ -13,6 +13,9 @@ export default function HomePage() {
   const [visibleStartTime, setVisibleStartTime] = useState(0);
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+  // Add state for wavesurfer instance
+  const [wavesurfer, setWavesurfer] = useState(null);
 
   return (
     <div>
@@ -25,42 +28,93 @@ export default function HomePage() {
         <Box
           sx={{
             display: "flex",
-            justifyContent: "center",
-            position: "relative",
-            marginBottom: 0,
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
           }}
         >
-          <BubbleRender
-            audioDuration={audioDuration}
-            vizWidth={vizWidth}
-            visibleStartTime={visibleStartTime}
-            visibleEndTime={visibleEndTime}
-            setSelectedBubble={setSelectedBubble}
-          />
+          {/* Bubble render area */}
+          <Box
+            sx={{
+              width: "100%",
+              height: "200px",
+              position: "relative",
+              marginBottom: -2,
+            }}
+          >
+            <BubbleRender
+              audioDuration={audioDuration}
+              vizWidth={vizWidth}
+              visibleStartTime={visibleStartTime}
+              visibleEndTime={visibleEndTime}
+              setSelectedBubble={setSelectedBubble}
+              isAudioLoaded={isAudioLoaded}
+            />
+          </Box>
+          {/* Waveform area */}
+          <Box sx={{ width: "100%" }}>
+            <WaveformVis
+              setAudioDuration={setAudioDuration}
+              setVizWidth={setVizWidth}
+              setVisibleStartTime={setVisibleStartTime}
+              setVisibleEndTime={setVisibleEndTime}
+              selectedBubble={selectedBubble}
+              setAudioFileName={setAudioFileName}
+              setIsAudioLoaded={setIsAudioLoaded}
+              setSelectedBubble={setSelectedBubble}
+              parentSetWavesurfer={setWavesurfer}
+              wavesurfer={wavesurfer}
+            />
+          </Box>
         </Box>
-        <WaveformVis
-          setAudioDuration={setAudioDuration}
-          setVizWidth={setVizWidth}
-          setVisibleStartTime={setVisibleStartTime}
-          setVisibleEndTime={setVisibleEndTime}
-          selectedBubble={selectedBubble}
-          setAudioFileName={setAudioFileName}
-          sx={{ marginTop: 0 }}
-        />
       </PrimaryContainer>
 
-      <PrimaryContainer
-        label="New Bubble"
-        labelColor="white"
-        title=""
-        titleColor="#FF0000"
-      >
-        <BubbleTable />
-      </PrimaryContainer>
-
+      {/* Pop up layers for bubbles*/}
       {[...Array(6)].map((_, index) => (
         <PopUpLayer key={index} layer={`${index + 1}`} />
       ))}
+
+      {/* Smaller containers for all current bubbles and all comments*/}
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          gap: 2,
+          mt: 2, // Add some margin on top if needed
+        }}
+      >
+        {/* Left Side - All Current Bubbles */}
+        <Box sx={{ flex: 1 }}>
+          <PrimaryContainer
+            label="New Bubble"
+            labelColor="white"
+            title={"All Current Bubbles"}
+            titleColor="#FF0000"
+            info={"Contains all bubble information across all layers"}
+          >
+            <BubbleTable
+              isAudioLoaded={isAudioLoaded}
+              wavesurfer={wavesurfer}
+            />
+          </PrimaryContainer>
+        </Box>
+
+        {/* Right Side - All Comments */}
+        <Box sx={{ flex: 1 }}>
+          <PrimaryContainer
+            label="Comments"
+            labelColor="white"
+            title={"All Comments"}
+            titleColor="#FF0000"
+            info={"Contains all comments across all bubbles"}
+          >
+            {/* Placeholder for Comments content */}
+            <div>Placeholder</div>
+          </PrimaryContainer>
+        </Box>
+      </Box>
     </div>
   );
 }

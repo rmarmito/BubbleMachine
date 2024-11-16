@@ -2,8 +2,16 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import ZoomPlugin from "wavesurfer.js/dist/plugins/zoom.js";
-import { Button } from "@mui/material";
+import { Box, IconButton, Stack, Button } from "@mui/material";
+import {
+  PlayArrow,
+  Pause,
+  RestartAlt,
+  ZoomIn,
+  ZoomOut,
+  Upload,
+  Cancel,
+} from "@mui/icons-material";
 import ProgressBar from "./Progressbar";
 import CommentDisplay from "../timestamped-comments/CommentDisplay.jsx";
 import {
@@ -14,7 +22,18 @@ import {
 } from "../../helpers/utils.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import throttle from "lodash/throttle";
-import debounce from "lodash/debounce";
+import BubbleCreator from "../table/BubbleCreator";
+
+const ZOOM_SETTINGS = {
+  FULL: {
+    level: 1,
+    pixelsPerSecond: 50,
+  },
+  HALF: {
+    level: 2,
+    pixelsPerSecond: 100,
+  },
+};
 
 const WaveformVis = ({
   setAudioDuration,
@@ -23,190 +42,125 @@ const WaveformVis = ({
   setVisibleStartTime,
   setVisibleEndTime,
   selectedBubble,
+  setIsAudioLoaded,
+  setSelectedBubble,
 }) => {
+  // Refs
   const waveformRef = useRef(null);
-  const [wavesurfer, setWavesurfer] = useState(null);
   const regionsPluginRef = useRef(null);
+
+  // State Management
+  const [wavesurfer, setWavesurfer] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [zoomLevel, setZoomLevel] = useState(0.5);
+  const [zoomLevel, setZoomLevel] = useState(ZOOM_SETTINGS.FULL.level);
   const [selectedStartTime, setSelectedStartTime] = useState(null);
-  const [selectedEndTime, setSelectedEndTime] = useState(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [hasFile, setHasFile] = useState(false);
 
-  // Zustand store for managing bubbles
+  // Zustand Store
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const addBubble = useBubbleStore((state) => state.addBubble);
+  const clearBubbles = useBubbleStore((state) => state.clearBubbles);
 
-  // Memoized function to render bubbles only when bubbles change
-  const renderBubbles = useCallback(
-    throttle(() => {
-      if (wavesurfer && regionsPluginRef.current) {
-        regionsPluginRef.current.clearRegions();
-        bubbles.forEach((bubble) => {
-          regionsPluginRef.current.addRegion({
-            id: bubble.id,
-            start: convertToSeconds(bubble.startTime),
-            end: convertToSeconds(bubble.stopTime),
-            color: colorToRGB(bubble.color),
-            drag: false,
-            resize: true,
-          });
-        });
-      }
-    }, 200),
-    [bubbles, wavesurfer]
-  );
+  // Region Management
+  const updateRegions = useCallback(() => {
+    if (!wavesurfer || !regionsPluginRef.current) return;
 
-  // Initializing WaveSurfer with plugins, without the timeline
-  useEffect(() => {
-    if (waveformRef.current) {
-      regionsPluginRef.current = RegionsPlugin.create({ dragSelection: false });
-      const ws = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: "#ddd",
-        progressColor: "#2196f3",
-        cursorColor: "#2196f3",
-        height: 128,
-        plugins: [
-          regionsPluginRef.current,
-          HoverPlugin.create({
-            lineColor: "#ff0000",
-            lineWidth: 2,
-            labelBackground: "#555",
-            labelColor: "#fff",
-            labelSize: "11px",
-            formatTimeCallback: (seconds) => formatTime(seconds),
-          }),
-          ZoomPlugin.create({
-            scale: zoomLevel,
-            maxZoom: 1000,
-            autoCenter: false,
-          }),
-        ],
-      });
+    regionsPluginRef.current.clearRegions();
 
-      setWavesurfer(ws);
-
-      ws.on("ready", () => {
-        const audioDuration = ws.getDuration();
-        setDuration(audioDuration);
-        setAudioDuration(audioDuration);
-        renderBubbles();
-      });
-
-      ws.on("redraw", () => {
-        setVizWidth(waveformRef.current.clientWidth);
-      });
-
-      ws.on("audioprocess", (time) => {
-        setCurrentTime(time);
-      });
-
-      ws.on("play", () => setIsPlaying(true));
-
-      ws.on("pause", () => setIsPlaying(false));
-
-      ws.on(
-        "scroll",
-        throttle((visibleStartTime, visibleEndTime) => {
-          setVisibleStartTime(formatTime(visibleStartTime));
-          setVisibleEndTime(formatTime(visibleEndTime));
-        }, 200)
-      );
-
-      ws.on(
-        "zoom",
-        debounce(() => handleZoomCheck(ws), 200)
-      );
-
-      regionsPluginRef.current.on("region-updated", (region) => {
-        const id = region.id;
-        updateBubble(id, {
-          startTime: formatTime(region.start),
-          stopTime: formatTime(region.end),
-        });
-      });
-
-      return () => ws.destroy();
-    }
-  }, [zoomLevel]);
-
-  // Function to check and handle zoom rendering
-  const handleZoomCheck = (ws) => {
-    if (waveformRef.current) {
-      const rect = waveformRef.current.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > window.innerHeight) {
-        ws.zoom(zoomLevel);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (wavesurfer && audioFile) wavesurfer.load(audioFile);
-  }, [audioFile, wavesurfer]);
-
-  useEffect(() => {
-    if (wavesurfer && selectedBubble) {
-      // Clear existing regions and add selected bubble's region
-      regionsPluginRef.current.clearRegions();
-      const { startTime, stopTime, color } = selectedBubble;
-
+    if (selectedBubble) {
       regionsPluginRef.current.addRegion({
         id: selectedBubble.id,
-        start: convertToSeconds(startTime),
-        end: convertToSeconds(stopTime),
-        color: colorToRGB(color),
-        drag: false,
+        start: convertToSeconds(selectedBubble.startTime),
+        end: convertToSeconds(selectedBubble.stopTime),
+        color: colorToRGB(selectedBubble.color),
         resize: true,
       });
-
-      // Set the playback to the bubble's start time and play
-      const startSeconds = convertToSeconds(startTime);
-      const seekRatio = startSeconds / duration;
-      wavesurfer.seekTo(seekRatio);
-      wavesurfer.play();
     }
-  }, [selectedBubble, wavesurfer, duration]);
+  }, [selectedBubble, wavesurfer]);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const fileUrl = URL.createObjectURL(file);
-      setAudioFile(fileUrl);
-      setAudioFileName(file.name);
-    }
-  };
+  // Scroll Handler
+  const handleScroll = useCallback(
+    throttle(() => {
+      if (!wavesurfer || !duration || !waveformRef.current) return;
 
-  const markStartTime = () => {
-    if (wavesurfer) setSelectedStartTime(wavesurfer.getCurrentTime());
-  };
+      const containerWidth = waveformRef.current.clientWidth;
+      const scrollPosition = wavesurfer.getScroll();
+      const currentZoomSetting =
+        zoomLevel === ZOOM_SETTINGS.FULL.level
+          ? ZOOM_SETTINGS.FULL
+          : ZOOM_SETTINGS.HALF;
+      const secondsPerPixel =
+        duration / (containerWidth * currentZoomSetting.level);
 
-  const markEndTime = () => {
-    if (wavesurfer && selectedStartTime !== null) {
-      const time = wavesurfer.getCurrentTime();
-      setSelectedEndTime(time);
-      createRegion(selectedStartTime, time);
-    }
-  };
+      const visibleStartSeconds = scrollPosition * secondsPerPixel;
+      const visibleEndSeconds =
+        visibleStartSeconds + containerWidth * secondsPerPixel;
 
-  const createRegion = (start, end) => {
-    if (start > end) [start, end] = [end, start];
-    const id = createID();
-    addBubble({
-      id,
-      startTime: formatTime(start),
-      stopTime: formatTime(end),
-      color: "Blue",
-      layer: 1,
-    });
-  };
+      setVisibleStartTime?.(formatTime(Math.max(0, visibleStartSeconds)));
+      setVisibleEndTime?.(formatTime(Math.min(duration, visibleEndSeconds)));
+      setScrollLeft(scrollPosition);
+    }, 16),
+    [wavesurfer, duration, zoomLevel, setVisibleStartTime, setVisibleEndTime]
+  );
 
-  const handlePlayPause = () => {
-    if (wavesurfer) wavesurfer.playPause();
-  };
+  // Zoom Management
+  const calculateZoom = useCallback(
+    (zoomSetting) => {
+      if (!wavesurfer || !waveformRef.current) return;
+
+      try {
+        const containerWidth = waveformRef.current.clientWidth;
+        const currentDuration = wavesurfer.getDuration() || duration;
+        if (!currentDuration) return;
+
+        const zoomValue =
+          (containerWidth / currentDuration) * zoomSetting.level;
+        wavesurfer.zoom(zoomValue);
+
+        const scrollPosition = wavesurfer.getScroll();
+        setScrollLeft(scrollPosition);
+
+        const secondsPerPixel =
+          currentDuration / (containerWidth * zoomSetting.level);
+        const visibleStartSeconds = scrollPosition * secondsPerPixel;
+        const visibleEndSeconds =
+          visibleStartSeconds + containerWidth * secondsPerPixel;
+
+        setVisibleStartTime?.(formatTime(Math.max(0, visibleStartSeconds)));
+        setVisibleEndTime?.(
+          formatTime(Math.min(currentDuration, visibleEndSeconds))
+        );
+
+        updateRegions();
+      } catch (error) {
+        console.error("Error during zoom:", error);
+      }
+    },
+    [
+      wavesurfer,
+      updateRegions,
+      setVisibleStartTime,
+      setVisibleEndTime,
+      duration,
+    ]
+  );
+
+  const toggleZoom = useCallback(() => {
+    const newZoomSetting =
+      zoomLevel === ZOOM_SETTINGS.FULL.level
+        ? ZOOM_SETTINGS.HALF
+        : ZOOM_SETTINGS.FULL;
+    setZoomLevel(newZoomSetting.level);
+    calculateZoom(newZoomSetting);
+  }, [zoomLevel, calculateZoom]);
+
+  // Basic Handlers
+  const handlePlayPause = () => wavesurfer?.playPause();
 
   const handleRestart = () => {
     if (wavesurfer) {
@@ -215,82 +169,404 @@ const WaveformVis = ({
     }
   };
 
-  const handleZoomChange = (newZoomLevel) => {
-    setZoomLevel(newZoomLevel);
-    if (wavesurfer) {
-      wavesurfer.zoom(newZoomLevel);
+  // File Management
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("File selected:", file.name);
+      const fileUrl = URL.createObjectURL(file);
+
+      // If there's an existing instance, destroy it first
+      if (wavesurfer) {
+        console.log("Destroying existing wavesurfer instance");
+        wavesurfer.destroy();
+        setWavesurfer(null);
+      }
+
+      console.log("Initializing new wavesurfer instance");
+      // Initialize new wavesurfer instance
+      regionsPluginRef.current = RegionsPlugin.create({
+        dragSelection: false,
+        snapToGrid: 0.1,
+      });
+
+      const hoverPlugin = HoverPlugin.create({
+        lineColor: "#ff0000",
+        lineWidth: 2,
+        labelBackground: "rgba(0, 0, 0, 0.75)",
+        labelColor: "#fff",
+        labelSize: "11px",
+        formatTimeCallback: (seconds) => formatTime(seconds),
+      });
+
+      const ws = WaveSurfer.create({
+        container: waveformRef.current,
+        waveColor: "#ddd",
+        progressColor: "#4E9EE7",
+        cursorColor: "#4E9EE7",
+        height: 128,
+        autoCenter: true,
+        fillParent: true,
+        scrollParent: true,
+        renderer: "WebGL2",
+        pixelRatio: 1,
+        normalize: true,
+        plugins: [regionsPluginRef.current, hoverPlugin],
+      });
+
+      // Set up event listeners
+      ws.on("ready", () => {
+        console.log("Wavesurfer ready event fired");
+        const audioDuration = ws.getDuration();
+        setDuration(audioDuration);
+        setAudioDuration?.(audioDuration);
+        setIsAudioLoaded?.(true);
+
+        if (waveformRef.current) {
+          setVizWidth?.(waveformRef.current.clientWidth);
+        }
+
+        calculateZoom(ZOOM_SETTINGS.FULL);
+      });
+
+      ws.on("scroll", handleScroll);
+      ws.on("play", () => setIsPlaying(true));
+      ws.on("pause", () => setIsPlaying(false));
+      ws.on(
+        "audioprocess",
+        throttle((time) => setCurrentTime(time), 16)
+      );
+
+      regionsPluginRef.current.on("region-updated", (region) => {
+        updateBubble(region.id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
+      });
+
+      // Load the file and update state
+      ws.load(fileUrl);
+      setWavesurfer(ws);
+      setAudioFile(fileUrl);
+      setAudioFileName?.(file.name);
+      setIsAudioLoaded?.(false);
+      setZoomLevel(ZOOM_SETTINGS.FULL.level);
+      setHasFile(true);
     }
   };
 
+  const handleFileRemove = () => {
+    const hasExistingBubbles = bubbles.length > 0;
+    const confirmMessage = hasExistingBubbles
+      ? "Removing the file will also delete all bubble annotations. Are you sure you want to continue?"
+      : "Are you sure you want to remove the file?";
+
+    if (window.confirm(confirmMessage)) {
+      console.log("Removing file and cleaning up");
+
+      // Destroy wavesurfer instance
+      if (wavesurfer) {
+        console.log("Destroying wavesurfer instance");
+        wavesurfer.destroy();
+        setWavesurfer(null);
+      }
+
+      // Clear all states
+      setAudioFile(null);
+      setAudioFileName?.(null);
+      setIsAudioLoaded?.(false);
+      setHasFile(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setSelectedStartTime(null);
+      setSelectedBubble?.(null);
+
+      // Clear bubbles if any exist
+      if (hasExistingBubbles) {
+        clearBubbles();
+      }
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    return () => {
+      if (wavesurfer) {
+        console.log("Cleaning up wavesurfer on unmount");
+        wavesurfer.destroy();
+      }
+    };
+  }, [wavesurfer]);
+
+  // Update regions when selected bubble changes
+  useEffect(() => {
+    updateRegions();
+  }, [selectedBubble, updateRegions]);
+
+  // Handle window resize
+  useEffect(() => {
+    if (!wavesurfer) return;
+
+    const handleResize = throttle(() => {
+      if (!waveformRef.current) return;
+
+      const containerWidth = waveformRef.current.clientWidth;
+      setVizWidth?.(containerWidth);
+
+      const currentZoomSetting =
+        zoomLevel === ZOOM_SETTINGS.FULL.level
+          ? ZOOM_SETTINGS.FULL
+          : ZOOM_SETTINGS.HALF;
+
+      calculateZoom(currentZoomSetting);
+    }, 100);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
+  useEffect(() => {
+    if (selectedBubble && wavesurfer) {
+      // Convert bubble's start time to seconds
+      const startTime = convertToSeconds(selectedBubble.startTime);
+
+      // Optional: Stop any current playback
+      wavesurfer.pause();
+
+      // Seek to the bubble's start time
+      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+
+      // Start playback from the bubble's start time
+      wavesurfer.play(startTime);
+    }
+  }, [selectedBubble, wavesurfer]);
+
   return (
-    <div style={{ padding: "20px", textAlign: "center", paddingTop: 0 }}>
-      <div
-        style={{ position: "relative", display: "inline-block", width: "100%" }}
-      >
+    <Box sx={{ width: "100%", p: 0 }}>
+      {/* Waveform */}
+      <div className="relative inline-block w-full mb-4">
         <div id="waveform" ref={waveformRef} style={{ touchAction: "none" }} />
       </div>
 
-      {/* Custom progress bar with scrubbing */}
+      {/* Progress Bar */}
       <ProgressBar
         currentTime={currentTime}
         duration={duration}
         wavesurfer={wavesurfer}
       />
 
-      {/* Timestamped Comment Display */}
-      <div style={{ position: "relative", marginTop: "10px" }}>
-        <CommentDisplay wavesurfer={wavesurfer} />
-      </div>
+      {/* Three Column Layout */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "200px 1fr 300px",
+          gap: 2,
+          mt: 4,
+          alignItems: "start",
+        }}
+      >
+        {/* Left Column - Playback Controls */}
+        <Stack spacing={2} alignItems="center">
+          {/* Play Controls Group */}
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* Reset Control */}
+            <IconButton
+              onClick={handleRestart}
+              size="medium"
+              disabled={!hasFile}
+              sx={(theme) => ({
+                border: "1px solid",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+                color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                transition: "all 0.2s ease-in-out",
+                opacity: !hasFile ? 0.5 : 1,
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
+                  transform: hasFile ? "translateY(-2px)" : "none",
+                },
+              })}
+            >
+              <RestartAlt />
+            </IconButton>
 
-      {/* Audio and Zoom controls */}
-      <div style={{ marginTop: "10px" }}>
-        <Button variant="contained" color="primary" onClick={handlePlayPause}>
-          {isPlaying ? "Pause" : "Play"}
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleRestart}
-          style={{ marginLeft: "10px" }}
+            {/* Play/Pause Button */}
+            <IconButton
+              onClick={handlePlayPause}
+              disabled={!hasFile}
+              sx={(theme) => ({
+                width: 56,
+                height: 56,
+                background:
+                  theme.palette.mode === "dark"
+                    ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
+                    : theme.palette.primary.main,
+                color: "white",
+                border:
+                  theme.palette.mode === "dark" ? "1px solid #2A2A3E" : "none",
+                opacity: !hasFile ? 0.5 : 1,
+                boxShadow:
+                  theme.palette.mode === "dark"
+                    ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
+                    : "0 3px 5px 2px rgba(33, 203, 243, .3)",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "linear-gradient(45deg, #2A2A3E, #34495E)"
+                      : theme.palette.primary.dark,
+                  transform: hasFile ? "translateY(-2px)" : "none",
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
+                      : "0 4px 8px 2px rgba(33, 203, 243, .4)",
+                },
+              })}
+            >
+              {isPlaying ? <Pause /> : <PlayArrow />}
+            </IconButton>
+
+            {/* Zoom Control */}
+            <IconButton
+              onClick={toggleZoom}
+              size="medium"
+              disabled={!hasFile}
+              sx={(theme) => ({
+                border: "1px solid",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+                color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                opacity: !hasFile ? 0.5 : 1,
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
+                  transform: hasFile ? "translateY(-2px)" : "none",
+                },
+              })}
+            >
+              {zoomLevel === ZOOM_SETTINGS.FULL.level ? (
+                <ZoomIn />
+              ) : (
+                <ZoomOut />
+              )}
+            </IconButton>
+          </Stack>
+
+          {/* Upload/Remove Button */}
+          <Box sx={{ width: "100%" }}>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+              id="audio-upload"
+            />
+            <label htmlFor="audio-upload">
+              {!hasFile ? (
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<Upload />}
+                  fullWidth
+                  size="small"
+                  sx={(theme) => ({
+                    height: "38px",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
+                    color: theme.palette.mode === "dark" ? "#fff" : undefined,
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? "#2C3E50" : undefined,
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#34495E" : undefined,
+                      transform: "translateY(-2px)",
+                    },
+                  })}
+                >
+                  UPLOAD
+                </Button>
+              ) : (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFileRemove();
+                  }}
+                  variant="outlined"
+                  component="span"
+                  startIcon={<Cancel />}
+                  fullWidth
+                  size="small"
+                  color="error"
+                  sx={(theme) => ({
+                    height: "38px",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
+                    border: "2px solid",
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255, 68, 68, 0.1)"
+                          : undefined,
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#3A3A4E" : undefined,
+                      transform: "translateY(-2px)",
+                    },
+                  })}
+                >
+                  REMOVE FILE
+                </Button>
+              )}
+            </label>
+          </Box>
+        </Stack>
+
+        {/* Center Column - Comments */}
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: "400px",
+            mx: "auto",
+            opacity: !hasFile ? 0.5 : 1,
+            pointerEvents: !hasFile ? "none" : "auto",
+          }}
         >
-          Start from Beginning
-        </Button>
-        <input
-          accept="audio/*"
-          id="audio-file-input"
-          type="file"
-          style={{ display: "none" }}
-          onChange={handleFileChange}
-        />
-        <label htmlFor="audio-file-input">
-          <Button
-            variant="contained"
-            color="primary"
-            component="span"
-            style={{ marginLeft: "10px" }}
-          >
-            Upload Audio
-          </Button>
-        </label>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={markStartTime}
-          style={{ marginLeft: "10px" }}
+          <CommentDisplay wavesurfer={wavesurfer} />
+        </Box>
+
+        {/* Right Column - Bubble Creator */}
+        <Box
+          sx={{
+            paddingRight: "16px",
+            width: "100%",
+            minWidth: 280,
+            "& .MuiPaper-root": {
+              width: "100%",
+            },
+            opacity: !hasFile ? 0.5 : 1,
+            pointerEvents: !hasFile ? "none" : "auto",
+          }}
         >
-          Mark Start Time
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={markEndTime}
-          disabled={selectedStartTime === null}
-          style={{ marginLeft: "10px" }}
-        >
-          Mark End Time
-        </Button>
-      </div>
-    </div>
+          <BubbleCreator
+            wavesurfer={wavesurfer}
+            disabled={!hasFile}
+            onCancel={() => {
+              // Optional: Add any cleanup needed when canceling bubble creation
+            }}
+          />
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
