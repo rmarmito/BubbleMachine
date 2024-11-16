@@ -124,7 +124,10 @@ const BubbleRender = React.memo(
               onMouseEnter={() => handleMouseEnter(bubble)}
               onMouseMove={(e) => handleMouseMove(e, bubble)}
               onMouseLeave={handleMouseLeave}
-              onClick={() => handleClick(bubble)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent the event from bubbling up
+                handleClick(bubble);
+              }}
             />
           );
         })
@@ -151,6 +154,12 @@ const BubbleRender = React.memo(
           width: "100%",
           height: "100%",
           backgroundColor: "transparent",
+        }}
+        onClick={() => {
+          // Deselect the bubble when clicking outside of any bubble
+          if (isAudioLoaded && setSelectedBubble) {
+            setSelectedBubble(null);
+          }
         }}
       >
         {renderedBubbles}

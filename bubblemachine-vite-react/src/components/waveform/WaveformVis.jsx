@@ -324,6 +324,21 @@ const WaveformVis = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
+  useEffect(() => {
+    if (selectedBubble && wavesurfer) {
+      // Convert bubble's start time to seconds
+      const startTime = convertToSeconds(selectedBubble.startTime);
+
+      // Optional: Stop any current playback
+      wavesurfer.pause();
+
+      // Seek to the bubble's start time
+      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+
+      // Start playback from the bubble's start time
+      wavesurfer.play(startTime);
+    }
+  }, [selectedBubble, wavesurfer]);
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
