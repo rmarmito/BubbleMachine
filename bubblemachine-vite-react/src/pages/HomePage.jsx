@@ -68,18 +68,53 @@ export default function HomePage() {
           </Box>
         </Box>
       </PrimaryContainer>
-      <PrimaryContainer
-        label="New Bubble"
-        labelColor="white"
-        title={"All Bubbles"}
-        titleColor="#FF0000"
-        info={"Contains all bubble information across all layers"}
-      >
-        <BubbleTable isAudioLoaded={isAudioLoaded} wavesurfer={wavesurfer} />
-      </PrimaryContainer>
+
+      {/* Pop up layers for bubbles*/}
       {[...Array(6)].map((_, index) => (
         <PopUpLayer key={index} layer={`${index + 1}`} />
       ))}
+
+      {/* Smaller containers for all current bubbles and all comments*/}
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          gap: 2,
+          mt: 2, // Add some margin on top if needed
+        }}
+      >
+        {/* Left Side - All Current Bubbles */}
+        <Box sx={{ flex: 1 }}>
+          <PrimaryContainer
+            label="New Bubble"
+            labelColor="white"
+            title={"All Current Bubbles"}
+            titleColor="#FF0000"
+            info={"Contains all bubble information across all layers"}
+          >
+            <BubbleTable
+              isAudioLoaded={isAudioLoaded}
+              wavesurfer={wavesurfer}
+            />
+          </PrimaryContainer>
+        </Box>
+
+        {/* Right Side - All Comments */}
+        <Box sx={{ flex: 1 }}>
+          <PrimaryContainer
+            label="Comments"
+            labelColor="white"
+            title={"All Comments"}
+            titleColor="#FF0000"
+            info={"Contains all comments across all bubbles"}
+          >
+            {/* Placeholder for Comments content */}
+            <div>Placeholder</div>
+          </PrimaryContainer>
+        </Box>
+      </Box>
     </div>
   );
 }
