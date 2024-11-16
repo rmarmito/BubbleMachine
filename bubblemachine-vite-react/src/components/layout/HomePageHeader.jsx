@@ -3,6 +3,7 @@ import { Box, Button, Stack, Tooltip } from "@mui/material";
 import { Upload, Download, ImportExport, Cancel } from "@mui/icons-material";
 import { useTheme } from "../../styles/context/ThemeContext.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
+import useCommentsStore from "../zustand/commentsStore";
 
 const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const { darkMode } = useTheme();
@@ -141,28 +142,38 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     fileInput.click();
   };
 
-  // Handle Export
   const handleExport = () => {
     if (!hasFile) {
-      alert("Please load an audio file before exporting bubble data");
+      alert("Please load an audio file before exporting data");
       return;
     }
 
-    if (bubbles.length === 0) {
-      alert("No bubbles to export");
+    if (bubbles.length === 0 && comments.length === 0) {
+      alert("No data to export");
       return;
     }
 
     try {
+      // Fetch comments data
+      const comments = useCommentsStore((state) => state.comments);
+
       // Prepare the data for export
-      const exportData = bubbles.map((bubble) => ({
-        id: bubble.id,
-        layer: bubble.layer,
-        bubbleName: bubble.bubbleName,
-        startTime: bubble.startTime,
-        stopTime: bubble.stopTime,
-        color: bubble.color,
-      }));
+      const exportData = {
+        bubbles: bubbles.map((bubble) => ({
+          id: bubble.id,
+          layer: bubble.layer,
+          bubbleName: bubble.bubbleName,
+          startTime: bubble.startTime,
+          stopTime: bubble.stopTime,
+          color: bubble.color,
+        })),
+        comments: comments.map((comment) => ({
+          id: comment.id,
+          startTime: comment.startTime,
+          endTime: comment.endTime,
+          text: comment.text,
+        })),
+      };
 
       // Create the blob and download link
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -170,14 +181,14 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "bubble-data.json";
+      link.download = "bubblemachine-data.json";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Export error:", error);
-      alert("Error exporting bubble data");
+      alert("Error exporting data");
     }
   };
 
