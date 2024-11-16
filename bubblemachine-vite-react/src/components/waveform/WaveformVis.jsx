@@ -20,6 +20,7 @@ import {
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import throttle from "lodash/throttle";
 import BubbleCreator from "../table/BubbleCreator";
+import CommentCreator from "../timestamped-comments/CommentCreator";
 
 const ZOOM_SETTINGS = {
   FULL: {
@@ -140,8 +141,7 @@ const WaveformVis = ({
       setVisibleStartTime,
       setVisibleEndTime,
       duration,
-      bubbles,
-    ] // Added bubbles here
+    ]
   );
 
   const toggleZoom = useCallback(() => {
@@ -269,7 +269,7 @@ const WaveformVis = ({
         wavesurfer.destroy();
       }
     };
-  }, [audioFile]);
+  }, [audioFile]); // Minimal dependencies to prevent re-runs
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -307,17 +307,6 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
-
-  // Add this effect near your other useEffects
-  useEffect(() => {
-    if (wavesurfer && bubbles.length > 0) {
-      // Slight delay to ensure DOM is ready
-      setTimeout(() => {
-        calculateZoom(ZOOM_SETTINGS.FULL);
-      }, 100);
-    }
-  }, [bubbles.length, wavesurfer]); // Only run when bubbles length changes or wavesurfer changes
-
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
@@ -332,11 +321,11 @@ const WaveformVis = ({
         wavesurfer={wavesurfer}
       />
 
-      {/* Three Column Layout */}
+      {/* Two Column Layout */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "200px 1fr 300px",
+          gridTemplateColumns: "200px 1fr",
           gap: 2,
           mt: 4,
           alignItems: "start",
@@ -436,39 +425,47 @@ const WaveformVis = ({
           </Stack>
         </Stack>
 
-        {/* Center Column - Comments */}
+        {/* Right Column - Comments and Comment Creator */}
         <Box
           sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            position: "relative",
             width: "100%",
-            maxWidth: "600px",
+            maxWidth: "600px", // Adjust as needed
             mx: "auto",
             opacity: !audioFile ? 0.5 : 1,
             pointerEvents: !audioFile ? "none" : "auto",
           }}
         >
-          <CommentDisplay wavesurfer={wavesurfer} />
-        </Box>
-
-        {/* Right Column - Bubble Creator */}
-        <Box
-          sx={{
-            paddingRight: "16px",
-            width: "100%",
-            minWidth: 280,
-            "& .MuiPaper-root": {
+          {/* Comment Display */}
+          <Box
+            sx={{
+              maxWidth: "400px", // Adjust based on your design
               width: "100%",
-            },
-            opacity: !audioFile ? 0.5 : 1,
-            pointerEvents: !audioFile ? "none" : "auto",
-          }}
-        >
-          <BubbleCreator
-            wavesurfer={wavesurfer}
-            disabled={!audioFile}
-            onCancel={() => {
-              // Optional: Add any cleanup needed when canceling bubble creation
             }}
-          />
+          >
+            <CommentDisplay wavesurfer={wavesurfer} />
+          </Box>
+
+          {/* Bubble Creator positioned to the right of Comment Display */}
+          <Box
+            sx={{
+              marginLeft: 1, // Space between comments and creator
+              minWidth: "180px", // Ensure it has enough width
+            }}
+          >
+            <CommentCreator />
+
+            <BubbleCreator
+              wavesurfer={wavesurfer}
+              disabled={!audioFile}
+              onCancel={() => {
+                // Optional: Add any cleanup needed when canceling bubble creation
+              }}
+            />
+          </Box>
         </Box>
       </Box>
     </Box>
