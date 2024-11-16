@@ -68,7 +68,7 @@ export default function HomePage() {
             variant="h6"
             style={{ fontWeight: "bold", color: "#FAFAD2" }}
           >
-            {audioFileName || "Upload an audio file"}
+            {audioFileName || "Load an audio file"}
           </Typography>
         }
       >

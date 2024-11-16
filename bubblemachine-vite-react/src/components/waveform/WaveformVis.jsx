@@ -21,6 +21,7 @@ import useBubbleStore from "../zustand/bubbleStore.jsx";
 import throttle from "lodash/throttle";
 import BubbleCreator from "../table/BubbleCreator";
 import CommentCreator from "../timestamped-comments/CommentCreator";
+import useCommentsStore from "../zustand/commentsStore.jsx";
 
 const ZOOM_SETTINGS = {
   FULL: {
@@ -59,6 +60,7 @@ const WaveformVis = ({
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
+  const clearComments = useCommentsStore((state) => state.clearComments);
 
   // Region Management
   const updateRegions = useCallback(() => {
@@ -256,6 +258,7 @@ const WaveformVis = ({
       setCurrentTime(0);
       setSelectedBubble?.(null);
       clearBubbles();
+      clearComments();
 
       // Clear DOM
       if (waveformRef.current) {
@@ -332,7 +335,7 @@ const WaveformVis = ({
         }}
       >
         {/* Column 1 - Playback Controls */}
-        <Stack spacing={2} alignItems="center">
+        <Stack spacing={2} alignItems="left">
           {/* Play Controls Group */}
           <Stack direction="row" spacing={2} alignItems="center">
             {/* Reset Control */}
@@ -364,8 +367,8 @@ const WaveformVis = ({
               onClick={handlePlayPause}
               disabled={!audioFile}
               sx={(theme) => ({
-                width: 56,
-                height: 56,
+                width: 75,
+                height: 75,
                 background:
                   theme.palette.mode === "dark"
                     ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"

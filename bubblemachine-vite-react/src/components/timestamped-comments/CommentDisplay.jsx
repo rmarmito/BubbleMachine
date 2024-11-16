@@ -1,9 +1,7 @@
-// src/components/timestamped-comments/CommentDisplay.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Paper, Typography } from "@mui/material";
-import { DateTime } from "luxon";
-import throttle from "lodash/throttle";
 import { useTheme } from "@mui/material/styles";
+import throttle from "lodash/throttle";
 import useCommentsStore from "../zustand/commentsStore";
 
 const CommentDisplay = ({ wavesurfer }) => {
@@ -32,6 +30,13 @@ const CommentDisplay = ({ wavesurfer }) => {
     }, 200),
     [comments, currentComment]
   );
+
+  // Clear current comment if comments array is cleared
+  useEffect(() => {
+    if (comments.length === 0) {
+      setCurrentComment(null);
+    }
+  }, [comments]);
 
   useEffect(() => {
     if (wavesurfer) {

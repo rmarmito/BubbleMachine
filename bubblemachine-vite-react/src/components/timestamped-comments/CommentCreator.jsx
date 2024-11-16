@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Flag, AddCircleOutline, Cancel } from "@mui/icons-material";
-import { createID, formatTime } from "../../helpers/utils";
+import { createID } from "../../helpers/utils";
 import useCommentsStore from "../zustand/commentsStore";
 import { useTheme } from "../../styles/context/ThemeContext"; // Use your custom theme context
 
@@ -29,10 +29,9 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
   };
 
   const markEndTime = () => {
-    if (wavesurfer) {
-      const currentTime = wavesurfer.getCurrentTime();
-      setSelectedEndTime(currentTime);
-    }
+    if (!wavesurfer || selectedStartTime === null) return;
+    const currentTime = wavesurfer.getCurrentTime();
+    setSelectedEndTime(currentTime);
   };
 
   const handleSave = () => {
@@ -66,40 +65,61 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
 
   if (!isCreating) {
     return (
-      <Tooltip title="Add new comment" placement="left">
-        <Button
-          variant="contained"
-          onClick={() => setIsCreating(true)}
-          startIcon={<AddCircleOutline />}
-          fullWidth
+      <Tooltip
+        title={
+          disabled ? "Upload a file to enable comments" : "Add new comment"
+        }
+        placement="left"
+      >
+        <Box
           sx={{
+            width: "100%",
             height: "75px",
             borderRadius: "21px 8px 8px 21px",
-            background: darkMode
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: disabled
+              ? darkMode
+                ? "rgba(30, 30, 46, 0.5)"
+                : "rgba(200, 200, 200, 0.5)"
+              : darkMode
               ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
               : "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
-            boxShadow: darkMode
+            boxShadow: disabled
+              ? "none"
+              : darkMode
               ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
               : "0 3px 5px 2px rgba(33, 203, 243, .3)",
-            color: "white",
-            textTransform: "none",
-            fontSize: "0.95rem",
-            fontWeight: 500,
-            border: darkMode ? "1px solid #2A2A3E" : "none",
-            "&:hover": {
-              background: darkMode
-                ? "linear-gradient(45deg, #2A2A3E, #34495E)"
-                : "linear-gradient(45deg, #2196F3 60%, #21CBF3 90%)",
-              boxShadow: darkMode
-                ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
-                : "0 4px 8px 2px rgba(33, 203, 243, .4)",
-              transform: "translateY(-2px)",
-            },
+            opacity: disabled ? 0.6 : 1,
+            pointerEvents: disabled ? "none" : "auto",
             transition: "all 0.2s ease-in-out",
           }}
         >
-          Add Comment
-        </Button>
+          <Button
+            variant="contained"
+            onClick={() => !disabled && setIsCreating(true)}
+            startIcon={<AddCircleOutline />}
+            fullWidth
+            sx={{
+              height: "100%",
+              background: "none",
+              color: "white",
+              fontWeight: 500,
+              fontSize: "0.95rem",
+              textTransform: "none",
+              "&:hover": {
+                background: disabled
+                  ? "none"
+                  : darkMode
+                  ? "linear-gradient(45deg, #2A2A3E, #34495E)"
+                  : "linear-gradient(45deg, #2196F3 60%, #21CBF3 90%)",
+              },
+            }}
+          >
+            Add Comment
+          </Button>
+        </Box>
       </Tooltip>
     );
   }
@@ -112,7 +132,7 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
     <Fade in={isCreating}>
       <Box sx={{ width: "100%" }}>
         <Stack spacing={1}>
-          {/* First Row: Start and End Time Buttons */}
+          {/* Start and End Time Buttons */}
           <Grid container spacing={1}>
             <Grid item xs={6}>
               <Button
@@ -120,57 +140,54 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 onClick={markStartTime}
                 startIcon={<Flag />}
                 fullWidth
-                color={selectedStartTime !== null ? "success" : "primary"}
                 sx={{
-                  justifyContent: "flex-left",
+                  justifyContent: "center",
                   height: "38px",
                   px: 1,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  backgroundColor: darkMode
-                    ? selectedStartTime !== null
-                      ? "#1E4620"
-                      : "#1E1E2E"
-                    : undefined,
+                  backgroundColor: selectedStartTime
+                    ? darkMode
+                      ? "#1E4620" // Green for dark mode
+                      : "success.main" // Green for light mode
+                    : darkMode
+                    ? "#1E1E2E"
+                    : "primary.main",
                   "&:hover": {
-                    backgroundColor: darkMode
-                      ? selectedStartTime !== null
+                    backgroundColor: selectedStartTime
+                      ? darkMode
                         ? "#2E5730"
-                        : "#2A2A3E"
-                      : undefined,
+                        : "success.dark"
+                      : darkMode
+                      ? "#2A2A3E"
+                      : "primary.dark",
                   },
                 }}
               >
-                {selectedStartTime !== null
-                  ? `Start: ${formatTime(selectedStartTime)}`
-                  : "Set Start"}
+                Start
               </Button>
             </Grid>
             <Grid item xs={6}>
               <Button
                 variant="contained"
                 onClick={markEndTime}
+                disabled={selectedStartTime === null}
                 startIcon={<Flag />}
                 fullWidth
-                color={selectedEndTime !== null ? "success" : "primary"}
-                disabled={selectedStartTime === null}
                 sx={{
-                  justifyContent: "flex-start",
+                  justifyContent: "center",
                   height: "38px",
                   px: 1,
-                  backgroundColor: darkMode
-                    ? selectedEndTime !== null
-                      ? "#1E4620"
-                      : "#1E1E2E"
-                    : selectedEndTime !== null
-                    ? "primary.main"
+                  backgroundColor: selectedStartTime
+                    ? darkMode
+                      ? "#1E1E2E"
+                      : "primary.main"
+                    : darkMode
+                    ? "#1E1E2E"
                     : "grey.300",
                   "&:hover": {
-                    backgroundColor: darkMode
-                      ? selectedEndTime !== null
-                        ? "#2E5730"
-                        : "#2A2A3E"
+                    backgroundColor: selectedStartTime
+                      ? darkMode
+                        ? "#2A2A3E"
+                        : "primary.dark"
                       : undefined,
                   },
                   "&:disabled": {
@@ -178,14 +195,12 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                   },
                 }}
               >
-                {selectedEndTime !== null
-                  ? `End: ${formatTime(selectedEndTime)}`
-                  : "Set End"}
+                End
               </Button>
             </Grid>
           </Grid>
 
-          {/* Second Row: Comment Input */}
+          {/* Comment Input */}
           <TextField
             label="Comment"
             value={commentText}
@@ -201,7 +216,7 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
             }}
           />
 
-          {/* Third Row: Cancel and Save Buttons */}
+          {/* Cancel and Save Buttons */}
           <Grid container spacing={1}>
             <Grid item xs={6}>
               <Button
@@ -211,7 +226,7 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 color="error"
                 fullWidth
                 sx={{
-                  justifyContent: "flex-start",
+                  justifyContent: "center",
                   height: "38px",
                   px: 1,
                   border: "2px solid",
@@ -236,12 +251,30 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 color="primary"
                 fullWidth
                 sx={{
-                  justifyContent: "flex-start",
+                  justifyContent: "center",
                   height: "38px",
                   px: 1,
-                  backgroundColor: darkMode ? "#1E1E2E" : undefined,
+                  backgroundColor:
+                    selectedStartTime !== null &&
+                    selectedEndTime !== null &&
+                    commentText.trim()
+                      ? darkMode
+                        ? "#0A74DA" // Blue for dark mode
+                        : "info.main" // Blue for light mode
+                      : darkMode
+                      ? "#1E1E2E"
+                      : "grey.300",
                   "&:hover": {
-                    backgroundColor: darkMode ? "#2A2A3E" : undefined,
+                    backgroundColor:
+                      selectedStartTime !== null &&
+                      selectedEndTime !== null &&
+                      commentText.trim()
+                        ? darkMode
+                          ? "#0C86F5"
+                          : "info.dark"
+                        : darkMode
+                        ? "#2A2A3E"
+                        : undefined,
                   },
                   "&:disabled": {
                     backgroundColor: darkMode ? "#141422" : "grey.300",
@@ -262,4 +295,5 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
     </Fade>
   );
 };
+
 export default CommentCreator;

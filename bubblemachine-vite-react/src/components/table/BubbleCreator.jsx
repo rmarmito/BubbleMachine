@@ -53,40 +53,61 @@ const BubbleCreator = ({ wavesurfer, disabled }) => {
 
   if (!isCreating) {
     return (
-      <Tooltip title="Create new bubble" placement="left">
-        <Button
-          variant="contained"
-          onClick={() => setIsCreating(true)}
-          startIcon={<AddCircleOutline />}
-          fullWidth
+      <Tooltip
+        title={
+          disabled ? "Upload a file to enable bubbles" : "Create new bubble"
+        }
+        placement="left"
+      >
+        <Box
           sx={{
+            width: "100%",
             height: "75px",
             borderRadius: "21px 8px 8px 21px",
-            background: darkMode
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: disabled
+              ? darkMode
+                ? "rgba(30, 30, 46, 0.5)"
+                : "rgba(200, 200, 200, 0.5)"
+              : darkMode
               ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
               : "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
-            boxShadow: darkMode
+            boxShadow: disabled
+              ? "none"
+              : darkMode
               ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
               : "0 3px 5px 2px rgba(33, 203, 243, .3)",
-            color: "white",
-            textTransform: "none",
-            fontSize: "0.95rem",
-            fontWeight: 500,
-            border: darkMode ? "1px solid #2A2A3E" : "none",
-            "&:hover": {
-              background: darkMode
-                ? "linear-gradient(45deg, #2A2A3E, #34495E)"
-                : "linear-gradient(45deg, #2196F3 60%, #21CBF3 90%)",
-              boxShadow: darkMode
-                ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
-                : "0 4px 8px 2px rgba(33, 203, 243, .4)",
-              transform: "translateY(-2px)",
-            },
+            opacity: disabled ? 0.6 : 1,
+            pointerEvents: disabled ? "none" : "auto",
             transition: "all 0.2s ease-in-out",
           }}
         >
-          Create Bubble
-        </Button>
+          <Button
+            variant="contained"
+            onClick={() => !disabled && setIsCreating(true)}
+            startIcon={<AddCircleOutline />}
+            fullWidth
+            sx={{
+              height: "100%",
+              background: "none",
+              color: "white",
+              fontWeight: 500,
+              fontSize: "0.95rem",
+              textTransform: "none",
+              "&:hover": {
+                background: disabled
+                  ? "none"
+                  : darkMode
+                  ? "linear-gradient(45deg, #2A2A3E, #34495E)"
+                  : "linear-gradient(45deg, #2196F3 60%, #21CBF3 90%)",
+              },
+            }}
+          >
+            Create Bubble
+          </Button>
+        </Box>
       </Tooltip>
     );
   }
