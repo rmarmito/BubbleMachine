@@ -2,10 +2,15 @@ import React from "react";
 import { Box, Button, Stack, Tooltip } from "@mui/material";
 import { Upload, Download, ImportExport, Cancel } from "@mui/icons-material";
 import { useTheme } from "../../styles/context/ThemeContext.jsx";
+import useBubbleStore from "../zustand/bubbleStore.jsx";
 
 const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const { darkMode } = useTheme();
+  const bubbles = useBubbleStore((state) => state.bubbles);
+  const addBubble = useBubbleStore((state) => state.addBubble);
+  const clearBubbles = useBubbleStore((state) => state.clearBubbles);
 
+  // Styles
   const containerStyles = {
     width: "100%",
     padding: 2,
@@ -32,6 +37,13 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     "&:hover": {
       transform: "translateY(-2px)",
       boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    },
+    "&:disabled": {
+      opacity: 0.5,
+      backgroundColor: darkMode
+        ? "rgba(42, 42, 62, 0.3)"
+        : "rgba(44, 62, 80, 0.3)",
+      color: darkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.5)",
     },
   };
 
@@ -73,34 +85,136 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     },
   };
 
+  // Handle Import
+  const handleImport = () => {
+    if (!hasFile) {
+      alert("Please upload an audio file before importing bubble data");
+      return;
+    }
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result);
+
+            // Validate imported data format
+            if (!Array.isArray(importedData)) {
+              throw new Error("Invalid data format");
+            }
+
+            // Confirm if user wants to clear existing bubbles
+            if (bubbles.length > 0) {
+              const confirmClear = window.confirm(
+                "Importing will replace existing bubbles. Do you want to continue?"
+              );
+              if (!confirmClear) return;
+            }
+
+            // Clear existing bubbles
+            clearBubbles();
+
+            // Import new bubbles
+            importedData.forEach((bubble) => {
+              addBubble({
+                ...bubble,
+                id: bubble.id,
+              });
+            });
+
+            alert("Bubbles imported successfully!");
+          } catch (error) {
+            console.error("Import error:", error);
+            alert("Error importing bubble data. Please check the file format.");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+
+    fileInput.click();
+  };
+
+  // Handle Export
+  const handleExport = () => {
+    if (!hasFile) {
+      alert("Please upload an audio file before exporting bubble data");
+      return;
+    }
+
+    if (bubbles.length === 0) {
+      alert("No bubbles to export");
+      return;
+    }
+
+    try {
+      // Prepare the data for export
+      const exportData = bubbles.map((bubble) => ({
+        id: bubble.id,
+        layer: bubble.layer,
+        bubbleName: bubble.bubbleName,
+        startTime: bubble.startTime,
+        stopTime: bubble.stopTime,
+        color: bubble.color,
+      }));
+
+      // Create the blob and download link
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "bubble-data.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Error exporting bubble data");
+    }
+  };
+
   return (
     <Box sx={containerStyles}>
       {/* Control buttons - now all in one group */}
       <Stack direction="row" spacing={2} alignItems="center">
-        <Tooltip title="Import Bubble data">
-          <Button
-            variant="contained"
-            startIcon={<ImportExport />}
-            sx={primaryButtonStyles}
-            onClick={() => {
-              // Handle Import action
-            }}
-          >
-            Import
-          </Button>
+        <Tooltip
+          title={!hasFile ? "Upload audio file first" : "Import Bubble data"}
+        >
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<ImportExport />}
+              sx={primaryButtonStyles}
+              onClick={handleImport}
+              disabled={!hasFile}
+            >
+              Import
+            </Button>
+          </span>
         </Tooltip>
 
-        <Tooltip title="Export Bubble data">
-          <Button
-            variant="contained"
-            startIcon={<Download />}
-            sx={primaryButtonStyles}
-            onClick={() => {
-              // Handle Export action
-            }}
-          >
-            Export
-          </Button>
+        <Tooltip
+          title={!hasFile ? "Upload audio file first" : "Export Bubble data"}
+        >
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              sx={primaryButtonStyles}
+              onClick={handleExport}
+              disabled={!hasFile}
+            >
+              Export
+            </Button>
+          </span>
         </Tooltip>
 
         <input

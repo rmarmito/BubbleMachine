@@ -89,7 +89,7 @@ const Header = () => {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Account settings">
+          {/* <Tooltip title="Account settings">
             <IconButton
               onClick={(e) => setAnchorEl(e.currentTarget)}
               sx={{
@@ -107,26 +107,10 @@ const Header = () => {
                 <AccountIcon />
               </Avatar>
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
         </Box>
 
         {/* Menus */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={() => setAnchorEl(null)}
-          PaperProps={{
-            sx: {
-              backgroundColor: darkMode ? "#1A1A2E" : "#FFFFFF",
-              borderRadius: "8px",
-              mt: 1,
-            },
-          }}
-        >
-          <MenuItem onClick={() => setAnchorEl(null)}>Profile</MenuItem>
-          <MenuItem onClick={() => setAnchorEl(null)}>Settings</MenuItem>
-          <MenuItem onClick={() => setAnchorEl(null)}>Logout</MenuItem>
-        </Menu>
 
         <Menu
           anchorEl={moreAnchorEl}
@@ -141,9 +125,9 @@ const Header = () => {
           }}
         >
           <MenuItem onClick={() => setMoreAnchorEl(null)}>
-            Documentation
+            About BubbleMachine
           </MenuItem>
-          <MenuItem onClick={() => setMoreAnchorEl(null)}>Help Center</MenuItem>
+          <MenuItem onClick={() => setMoreAnchorEl(null)}>More</MenuItem>
         </Menu>
       </Toolbar>
     </AppBar>
