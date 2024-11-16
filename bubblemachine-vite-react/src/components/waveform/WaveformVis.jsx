@@ -2,21 +2,18 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
-import { Box, IconButton, Stack, Button } from "@mui/material";
+import { Box, IconButton, Stack } from "@mui/material";
 import {
   PlayArrow,
   Pause,
   RestartAlt,
   ZoomIn,
   ZoomOut,
-  Upload,
-  Cancel,
 } from "@mui/icons-material";
 import ProgressBar from "./Progressbar";
 import CommentDisplay from "../timestamped-comments/CommentDisplay.jsx";
 import {
   formatTime,
-  createID,
   convertToSeconds,
   colorToRGB,
 } from "../../helpers/utils.jsx";
@@ -38,12 +35,12 @@ const ZOOM_SETTINGS = {
 const WaveformVis = ({
   setAudioDuration,
   setVizWidth,
-  setAudioFileName,
   setVisibleStartTime,
   setVisibleEndTime,
   selectedBubble,
   setIsAudioLoaded,
   setSelectedBubble,
+  audioFile,
 }) => {
   // Refs
   const waveformRef = useRef(null);
@@ -51,19 +48,15 @@ const WaveformVis = ({
 
   // State Management
   const [wavesurfer, setWavesurfer] = useState(null);
-  const [audioFile, setAudioFile] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(ZOOM_SETTINGS.FULL.level);
-  const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [hasFile, setHasFile] = useState(false);
 
   // Zustand Store
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
-  const addBubble = useBubbleStore((state) => state.addBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
 
   // Region Management
@@ -147,7 +140,8 @@ const WaveformVis = ({
       setVisibleStartTime,
       setVisibleEndTime,
       duration,
-    ]
+      bubbles,
+    ] // Added bubbles here
   );
 
   const toggleZoom = useCallback(() => {
@@ -169,22 +163,12 @@ const WaveformVis = ({
     }
   };
 
-  // File Management
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("File selected:", file.name);
-      const fileUrl = URL.createObjectURL(file);
+  // Initialize WaveSurfer when audioFile changes
+  useEffect(() => {
+    if (!waveformRef.current) return;
 
-      // If there's an existing instance, destroy it first
-      if (wavesurfer) {
-        console.log("Destroying existing wavesurfer instance");
-        wavesurfer.destroy();
-        setWavesurfer(null);
-      }
-
-      console.log("Initializing new wavesurfer instance");
-      // Initialize new wavesurfer instance
+    const initializeWavesurfer = () => {
+      // Initialize new WaveSurfer instance
       regionsPluginRef.current = RegionsPlugin.create({
         dragSelection: false,
         snapToGrid: 0.1,
@@ -216,7 +200,7 @@ const WaveformVis = ({
 
       // Set up event listeners
       ws.on("ready", () => {
-        console.log("Wavesurfer ready event fired");
+        console.log("WaveSurfer ready event fired");
         const audioDuration = ws.getDuration();
         setDuration(audioDuration);
         setAudioDuration?.(audioDuration);
@@ -244,59 +228,48 @@ const WaveformVis = ({
         });
       });
 
-      // Load the file and update state
-      ws.load(fileUrl);
-      setWavesurfer(ws);
-      setAudioFile(fileUrl);
-      setAudioFileName?.(file.name);
-      setIsAudioLoaded?.(false);
-      setZoomLevel(ZOOM_SETTINGS.FULL.level);
-      setHasFile(true);
-    }
-  };
+      return ws;
+    };
 
-  const handleFileRemove = () => {
-    const hasExistingBubbles = bubbles.length > 0;
-    const confirmMessage = hasExistingBubbles
-      ? "Removing the file will also delete all bubble annotations. Are you sure you want to continue?"
-      : "Are you sure you want to remove the file?";
-
-    if (window.confirm(confirmMessage)) {
-      console.log("Removing file and cleaning up");
-
-      // Destroy wavesurfer instance
+    // Cleanup and initialize
+    if (audioFile) {
+      // Cleanup previous instance if it exists
       if (wavesurfer) {
-        console.log("Destroying wavesurfer instance");
+        wavesurfer.destroy();
+      }
+
+      // Initialize new instance
+      const ws = initializeWavesurfer();
+      setWavesurfer(ws);
+      ws.load(audioFile);
+      setZoomLevel(ZOOM_SETTINGS.FULL.level);
+    } else {
+      // Handle file removal
+      if (wavesurfer) {
         wavesurfer.destroy();
         setWavesurfer(null);
       }
 
-      // Clear all states
-      setAudioFile(null);
-      setAudioFileName?.(null);
+      // Reset states
       setIsAudioLoaded?.(false);
-      setHasFile(false);
-      setCurrentTime(0);
       setDuration(0);
-      setSelectedStartTime(null);
+      setCurrentTime(0);
       setSelectedBubble?.(null);
+      clearBubbles();
 
-      // Clear bubbles if any exist
-      if (hasExistingBubbles) {
-        clearBubbles();
+      // Clear DOM
+      if (waveformRef.current) {
+        waveformRef.current.innerHTML = "";
       }
     }
-  };
 
-  // Effects
-  useEffect(() => {
+    // Cleanup on effect cleanup
     return () => {
       if (wavesurfer) {
-        console.log("Cleaning up wavesurfer on unmount");
         wavesurfer.destroy();
       }
     };
-  }, [wavesurfer]);
+  }, [audioFile]);
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -324,21 +297,26 @@ const WaveformVis = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
+
+  // Play from selected bubble's start time
   useEffect(() => {
     if (selectedBubble && wavesurfer) {
-      // Convert bubble's start time to seconds
       const startTime = convertToSeconds(selectedBubble.startTime);
-
-      // Optional: Stop any current playback
       wavesurfer.pause();
-
-      // Seek to the bubble's start time
       wavesurfer.seekTo(startTime / wavesurfer.getDuration());
-
-      // Start playback from the bubble's start time
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
+
+  // Add this effect near your other useEffects
+  useEffect(() => {
+    if (wavesurfer && bubbles.length > 0) {
+      // Slight delay to ensure DOM is ready
+      setTimeout(() => {
+        calculateZoom(ZOOM_SETTINGS.FULL);
+      }, 100);
+    }
+  }, [bubbles.length, wavesurfer]); // Only run when bubbles length changes or wavesurfer changes
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
@@ -372,7 +350,7 @@ const WaveformVis = ({
             <IconButton
               onClick={handleRestart}
               size="medium"
-              disabled={!hasFile}
+              disabled={!audioFile}
               sx={(theme) => ({
                 border: "1px solid",
                 borderColor:
@@ -381,11 +359,11 @@ const WaveformVis = ({
                 backgroundColor:
                   theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
                 transition: "all 0.2s ease-in-out",
-                opacity: !hasFile ? 0.5 : 1,
+                opacity: !audioFile ? 0.5 : 1,
                 "&:hover": {
                   backgroundColor:
                     theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
-                  transform: hasFile ? "translateY(-2px)" : "none",
+                  transform: audioFile ? "translateY(-2px)" : "none",
                 },
               })}
             >
@@ -395,7 +373,7 @@ const WaveformVis = ({
             {/* Play/Pause Button */}
             <IconButton
               onClick={handlePlayPause}
-              disabled={!hasFile}
+              disabled={!audioFile}
               sx={(theme) => ({
                 width: 56,
                 height: 56,
@@ -406,7 +384,7 @@ const WaveformVis = ({
                 color: "white",
                 border:
                   theme.palette.mode === "dark" ? "1px solid #2A2A3E" : "none",
-                opacity: !hasFile ? 0.5 : 1,
+                opacity: !audioFile ? 0.5 : 1,
                 boxShadow:
                   theme.palette.mode === "dark"
                     ? "0 3px 5px 2px rgba(30, 30, 46, 0.3)"
@@ -417,7 +395,7 @@ const WaveformVis = ({
                     theme.palette.mode === "dark"
                       ? "linear-gradient(45deg, #2A2A3E, #34495E)"
                       : theme.palette.primary.dark,
-                  transform: hasFile ? "translateY(-2px)" : "none",
+                  transform: audioFile ? "translateY(-2px)" : "none",
                   boxShadow:
                     theme.palette.mode === "dark"
                       ? "0 4px 8px 2px rgba(30, 30, 46, 0.4)"
@@ -432,7 +410,7 @@ const WaveformVis = ({
             <IconButton
               onClick={toggleZoom}
               size="medium"
-              disabled={!hasFile}
+              disabled={!audioFile}
               sx={(theme) => ({
                 border: "1px solid",
                 borderColor:
@@ -440,12 +418,12 @@ const WaveformVis = ({
                 color: theme.palette.mode === "dark" ? "#fff" : "inherit",
                 backgroundColor:
                   theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
-                opacity: !hasFile ? 0.5 : 1,
+                opacity: !audioFile ? 0.5 : 1,
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
                   backgroundColor:
                     theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
-                  transform: hasFile ? "translateY(-2px)" : "none",
+                  transform: audioFile ? "translateY(-2px)" : "none",
                 },
               })}
             >
@@ -456,89 +434,16 @@ const WaveformVis = ({
               )}
             </IconButton>
           </Stack>
-
-          {/* Upload/Remove Button */}
-          <Box sx={{ width: "100%" }}>
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-              id="audio-upload"
-            />
-            <label htmlFor="audio-upload">
-              {!hasFile ? (
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<Upload />}
-                  fullWidth
-                  size="small"
-                  sx={(theme) => ({
-                    height: "38px",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
-                    color: theme.palette.mode === "dark" ? "#fff" : undefined,
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                      backgroundColor:
-                        theme.palette.mode === "dark" ? "#2C3E50" : undefined,
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#34495E" : undefined,
-                      transform: "translateY(-2px)",
-                    },
-                  })}
-                >
-                  UPLOAD
-                </Button>
-              ) : (
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleFileRemove();
-                  }}
-                  variant="outlined"
-                  component="span"
-                  startIcon={<Cancel />}
-                  fullWidth
-                  size="small"
-                  color="error"
-                  sx={(theme) => ({
-                    height: "38px",
-                    borderColor:
-                      theme.palette.mode === "dark" ? "#2A2A3E" : undefined,
-                    border: "2px solid",
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255, 68, 68, 0.1)"
-                          : undefined,
-                      borderColor:
-                        theme.palette.mode === "dark" ? "#3A3A4E" : undefined,
-                      transform: "translateY(-2px)",
-                    },
-                  })}
-                >
-                  REMOVE FILE
-                </Button>
-              )}
-            </label>
-          </Box>
         </Stack>
 
         {/* Center Column - Comments */}
         <Box
           sx={{
             width: "100%",
-            maxWidth: "400px",
+            maxWidth: "600px",
             mx: "auto",
-            opacity: !hasFile ? 0.5 : 1,
-            pointerEvents: !hasFile ? "none" : "auto",
+            opacity: !audioFile ? 0.5 : 1,
+            pointerEvents: !audioFile ? "none" : "auto",
           }}
         >
           <CommentDisplay wavesurfer={wavesurfer} />
@@ -553,13 +458,13 @@ const WaveformVis = ({
             "& .MuiPaper-root": {
               width: "100%",
             },
-            opacity: !hasFile ? 0.5 : 1,
-            pointerEvents: !hasFile ? "none" : "auto",
+            opacity: !audioFile ? 0.5 : 1,
+            pointerEvents: !audioFile ? "none" : "auto",
           }}
         >
           <BubbleCreator
             wavesurfer={wavesurfer}
-            disabled={!hasFile}
+            disabled={!audioFile}
             onCancel={() => {
               // Optional: Add any cleanup needed when canceling bubble creation
             }}
