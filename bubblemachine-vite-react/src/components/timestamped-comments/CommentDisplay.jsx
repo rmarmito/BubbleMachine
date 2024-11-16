@@ -1,56 +1,42 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Box,
-  IconButton,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Paper,
-  Typography,
-  Button,
-} from "@mui/material";
-import { Comment } from "@mui/icons-material";
-import { DateTime } from "luxon";
-import throttle from "lodash/throttle";
+import { Box, Paper, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import throttle from "lodash/throttle";
+import useCommentsStore from "../zustand/commentsStore";
 
 const CommentDisplay = ({ wavesurfer }) => {
   const theme = useTheme();
-  const [comments, setComments] = useState([]);
+  const comments = useCommentsStore((state) => state.comments);
   const [currentComment, setCurrentComment] = useState(null);
-  const [commentDisplayTime, setCommentDisplayTime] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newCommentText, setNewCommentText] = useState("");
 
   // Throttled function to update current comment
   const updateCurrentComment = useCallback(
     throttle((time) => {
       const activeComment = comments.find(
         (comment) =>
-          time >= comment.timestamp &&
-          time < comment.timestamp + 0.5 &&
+          time >= comment.startTime &&
+          time <= comment.endTime &&
           (currentComment ? comment.id !== currentComment.id : true)
       );
 
       if (activeComment) {
         setCurrentComment(activeComment);
-        setCommentDisplayTime(DateTime.now());
       }
 
-      // Hide the comment after 5 seconds of display
-      if (currentComment && commentDisplayTime) {
-        const now = DateTime.now();
-        const diffInSeconds = now.diff(commentDisplayTime, "seconds").seconds;
-        if (diffInSeconds >= 5) {
-          setCurrentComment(null);
-          setCommentDisplayTime(null);
-        }
+      // Hide the comment after its end time
+      if (currentComment && time > currentComment.endTime) {
+        setCurrentComment(null);
       }
     }, 200),
-    [comments, currentComment, commentDisplayTime]
+    [comments, currentComment]
   );
+
+  // Clear current comment if comments array is cleared
+  useEffect(() => {
+    if (comments.length === 0) {
+      setCurrentComment(null);
+    }
+  }, [comments]);
 
   useEffect(() => {
     if (wavesurfer) {
@@ -63,22 +49,6 @@ const CommentDisplay = ({ wavesurfer }) => {
       };
     }
   }, [wavesurfer, updateCurrentComment]);
-
-  const handleAddComment = () => {
-    if (wavesurfer && newCommentText) {
-      const currentTime = wavesurfer.getCurrentTime();
-      setComments((prevComments) => [
-        ...prevComments,
-        {
-          id: Date.now(),
-          timestamp: currentTime,
-          text: newCommentText,
-        },
-      ]);
-      setNewCommentText("");
-      setIsDialogOpen(false);
-    }
-  };
 
   return (
     <Paper
@@ -129,73 +99,6 @@ const CommentDisplay = ({ wavesurfer }) => {
           </Typography>
         </Box>
       )}
-
-      {/* Add Comment IconButton */}
-      <IconButton
-        onClick={() => setIsDialogOpen(true)}
-        disabled={!wavesurfer}
-        sx={(theme) => ({
-          position: "absolute",
-          bottom: 8,
-          right: 8,
-          border: "1px solid",
-          borderColor: theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
-          color: theme.palette.mode === "dark" ? "#fff" : "inherit",
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#1E1E2E" : "transparent",
-          transition: "all 0.2s ease-in-out",
-          "&:hover": {
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#2C3E50" : "grey.100",
-            transform: !wavesurfer ? "none" : "translateY(-2px)",
-          },
-          opacity: !wavesurfer ? 0.5 : 1,
-        })}
-      >
-        <Comment />
-      </IconButton>
-
-      {/* Comment Dialog */}
-      <Dialog
-        open={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add a Comment</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Comment"
-            fullWidth
-            multiline
-            minRows={3}
-            value={newCommentText}
-            onChange={(e) => setNewCommentText(e.target.value)}
-            variant="outlined"
-            InputProps={{
-              style: { color: theme.palette.text.primary },
-            }}
-            InputLabelProps={{
-              style: { color: theme.palette.text.secondary },
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAddComment}
-            color="primary"
-            variant="contained"
-            disabled={!newCommentText.trim()}
-          >
-            Add Comment
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Paper>
   );
 };

@@ -8,6 +8,7 @@ import BubbleTable from "../components/table/BubbleTable";
 import PopUpLayer from "../components/table/PopUpLayer";
 import Typography from "@mui/material/Typography";
 import SecondaryHeader from "../components/layout/HomePageHeader";
+import CommentsTable from "../components/table/CommentsTable";
 
 export default function HomePage() {
   const [audioDuration, setAudioDuration] = useState(0);
@@ -67,7 +68,7 @@ export default function HomePage() {
             variant="h6"
             style={{ fontWeight: "bold", color: "#FAFAD2" }}
           >
-            {audioFileName || "Upload an audio file"}
+            {audioFileName || "Load an audio file"}
           </Typography>
         }
       >
@@ -155,10 +156,9 @@ export default function HomePage() {
             labelColor="white"
             title={"All Comments"}
             titleColor="#FF0000"
-            info={"Contains all comments across all bubbles"}
+            info={"Contains all comments"}
           >
-            {/* Placeholder for Comments content */}
-            <div>Placeholder</div>
+            <CommentsTable />
           </PrimaryContainer>
         </Box>
       </Box>

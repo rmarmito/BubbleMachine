@@ -20,6 +20,8 @@ import {
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import throttle from "lodash/throttle";
 import BubbleCreator from "../table/BubbleCreator";
+import CommentCreator from "../timestamped-comments/CommentCreator";
+import useCommentsStore from "../zustand/commentsStore.jsx";
 
 const ZOOM_SETTINGS = {
   FULL: {
@@ -58,6 +60,7 @@ const WaveformVis = ({
   const bubbles = useBubbleStore((state) => state.bubbles);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
+  const clearComments = useCommentsStore((state) => state.clearComments);
 
   // Region Management
   const updateRegions = useCallback(() => {
@@ -140,8 +143,7 @@ const WaveformVis = ({
       setVisibleStartTime,
       setVisibleEndTime,
       duration,
-      bubbles,
-    ] // Added bubbles here
+    ]
   );
 
   const toggleZoom = useCallback(() => {
@@ -256,6 +258,7 @@ const WaveformVis = ({
       setCurrentTime(0);
       setSelectedBubble?.(null);
       clearBubbles();
+      clearComments();
 
       // Clear DOM
       if (waveformRef.current) {
@@ -269,7 +272,7 @@ const WaveformVis = ({
         wavesurfer.destroy();
       }
     };
-  }, [audioFile]);
+  }, [audioFile]); // Minimal dependencies to prevent re-runs
 
   // Update regions when selected bubble changes
   useEffect(() => {
@@ -307,17 +310,6 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
-
-  // Add this effect near your other useEffects
-  useEffect(() => {
-    if (wavesurfer && bubbles.length > 0) {
-      // Slight delay to ensure DOM is ready
-      setTimeout(() => {
-        calculateZoom(ZOOM_SETTINGS.FULL);
-      }, 100);
-    }
-  }, [bubbles.length, wavesurfer]); // Only run when bubbles length changes or wavesurfer changes
-
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
@@ -332,18 +324,18 @@ const WaveformVis = ({
         wavesurfer={wavesurfer}
       />
 
-      {/* Three Column Layout */}
+      {/* 5-Column Layout */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "200px 1fr 300px",
+          gridTemplateColumns: "1fr 1fr 2fr 1fr 1fr",
           gap: 2,
           mt: 4,
           alignItems: "start",
         }}
       >
-        {/* Left Column - Playback Controls */}
-        <Stack spacing={2} alignItems="center">
+        {/* Column 1 - Playback Controls */}
+        <Stack spacing={2} alignItems="left">
           {/* Play Controls Group */}
           <Stack direction="row" spacing={2} alignItems="center">
             {/* Reset Control */}
@@ -375,8 +367,8 @@ const WaveformVis = ({
               onClick={handlePlayPause}
               disabled={!audioFile}
               sx={(theme) => ({
-                width: 56,
-                height: 56,
+                width: 75,
+                height: 75,
                 background:
                   theme.palette.mode === "dark"
                     ? "linear-gradient(45deg, #1E1E2E, #2C3E50)"
@@ -436,32 +428,26 @@ const WaveformVis = ({
           </Stack>
         </Stack>
 
-        {/* Center Column - Comments */}
+        {/* Column 2 - Empty */}
+        <Box />
+
+        {/* Column 3 - Comment Display */}
         <Box
           sx={{
+            maxWidth: "400px",
             width: "100%",
-            maxWidth: "600px",
-            mx: "auto",
-            opacity: !audioFile ? 0.5 : 1,
-            pointerEvents: !audioFile ? "none" : "auto",
           }}
         >
           <CommentDisplay wavesurfer={wavesurfer} />
         </Box>
 
-        {/* Right Column - Bubble Creator */}
-        <Box
-          sx={{
-            paddingRight: "16px",
-            width: "100%",
-            minWidth: 280,
-            "& .MuiPaper-root": {
-              width: "100%",
-            },
-            opacity: !audioFile ? 0.5 : 1,
-            pointerEvents: !audioFile ? "none" : "auto",
-          }}
-        >
+        {/* Column 4 - Comment Creator */}
+        <Box>
+          <CommentCreator wavesurfer={wavesurfer} disabled={!audioFile} />
+        </Box>
+
+        {/* Column 5 - Bubble Creator */}
+        <Box>
           <BubbleCreator
             wavesurfer={wavesurfer}
             disabled={!audioFile}
