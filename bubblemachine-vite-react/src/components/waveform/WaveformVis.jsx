@@ -321,17 +321,17 @@ const WaveformVis = ({
         wavesurfer={wavesurfer}
       />
 
-      {/* Two Column Layout */}
+      {/* 5-Column Layout */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "200px 1fr",
+          gridTemplateColumns: "1fr 1fr 2fr 1fr 1fr",
           gap: 2,
           mt: 4,
           alignItems: "start",
         }}
       >
-        {/* Left Column - Playback Controls */}
+        {/* Column 1 - Playback Controls */}
         <Stack spacing={2} alignItems="center">
           {/* Play Controls Group */}
           <Stack direction="row" spacing={2} alignItems="center">
@@ -425,47 +425,33 @@ const WaveformVis = ({
           </Stack>
         </Stack>
 
-        {/* Right Column - Comments and Comment Creator */}
+        {/* Column 2 - Empty */}
+        <Box />
+
+        {/* Column 3 - Comment Display */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-start",
-            position: "relative",
+            maxWidth: "400px",
             width: "100%",
-            maxWidth: "600px", // Adjust as needed
-            mx: "auto",
-            opacity: !audioFile ? 0.5 : 1,
-            pointerEvents: !audioFile ? "none" : "auto",
           }}
         >
-          {/* Comment Display */}
-          <Box
-            sx={{
-              maxWidth: "400px", // Adjust based on your design
-              width: "100%",
-            }}
-          >
-            <CommentDisplay wavesurfer={wavesurfer} />
-          </Box>
+          <CommentDisplay wavesurfer={wavesurfer} />
+        </Box>
 
-          {/* Bubble Creator positioned to the right of Comment Display */}
-          <Box
-            sx={{
-              marginLeft: 1, // Space between comments and creator
-              minWidth: "180px", // Ensure it has enough width
-            }}
-          >
-            <CommentCreator />
+        {/* Column 4 - Comment Creator */}
+        <Box>
+          <CommentCreator wavesurfer={wavesurfer} disabled={!audioFile} />
+        </Box>
 
-            <BubbleCreator
-              wavesurfer={wavesurfer}
-              disabled={!audioFile}
-              onCancel={() => {
-                // Optional: Add any cleanup needed when canceling bubble creation
-              }}
-            />
-          </Box>
+        {/* Column 5 - Bubble Creator */}
+        <Box>
+          <BubbleCreator
+            wavesurfer={wavesurfer}
+            disabled={!audioFile}
+            onCancel={() => {
+              // Optional: Add any cleanup needed when canceling bubble creation
+            }}
+          />
         </Box>
       </Box>
     </Box>
