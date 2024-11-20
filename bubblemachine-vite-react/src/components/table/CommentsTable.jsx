@@ -70,6 +70,24 @@ const CommentsTable = () => {
           multiline: true,
           minRows: 2,
           maxRows: 4,
+          onKeyDown: (e) => {
+            // Stop propagation of arrow keys
+            if (
+              ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                e.key
+              )
+            ) {
+              e.stopPropagation();
+            }
+            // Keep the Ctrl+Enter save functionality
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              const table = document.querySelector(".MuiTable-root");
+              const saveButton = table.querySelector('[aria-label="Save"]');
+              if (saveButton) {
+                saveButton.click();
+              }
+            }
+          },
         },
       },
     ],
@@ -110,6 +128,44 @@ const CommentsTable = () => {
     setValidationErrors({});
     updateComment(values.id, updatedComment);
     table.setEditingRow(null);
+  };
+  // This component can be used in both BubbleTable and CommentsTable
+
+  const TimeInput = ({ value, onChange, error, helperText }) => {
+    const [localValue, setLocalValue] = useState(value || "");
+
+    const handleChange = (e) => {
+      const newValue = formatTimeInput(e.target.value);
+      setLocalValue(newValue);
+
+      // Only trigger onChange when we have a complete time
+      const isComplete = /^\d{2}:\d{2}:\d{3}$/.test(newValue);
+      if (isComplete) {
+        onChange({ target: { value: newValue } });
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      // Stop propagation of all arrow keys to prevent table navigation
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        e.stopPropagation();
+      }
+    };
+
+    return (
+      <TextField
+        size="small"
+        value={localValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        error={error}
+        helperText={helperText}
+        placeholder="00:00:000"
+        inputProps={{
+          style: { fontFamily: "monospace" },
+        }}
+      />
+    );
   };
 
   const table = useMaterialReactTable({

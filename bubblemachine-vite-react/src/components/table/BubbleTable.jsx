@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -8,80 +8,58 @@ import {
   Button,
   IconButton,
   Tooltip,
-  styled,
   TextField,
   MenuItem,
+  useTheme,
+  Typography,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import ColorPickerCell from "./ColorPickerCell";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { createID, generateRandomColor } from "../../helpers/utils.jsx";
+import ColorPickerCell from "./ColorPickerCell.jsx";
 
-// Styled components for better UI
-const StyledButton = styled(Button)(({ theme }) => ({
-  textTransform: "none",
-  borderRadius: "8px",
-  transition: "all 0.2s",
-  "&:hover": {
-    transform: "translateY(-1px)",
-    boxShadow: theme.shadows[4],
-  },
-}));
-
-const ActionButton = styled(IconButton)(({ theme }) => ({
-  transition: "all 0.2s",
-  "&:hover": {
-    transform: "scale(1.1)",
-  },
-}));
-
-// Smart time input formatter
-const formatTimeInput = (value) => {
-  if (!value) return "";
-
-  // Remove all non-numeric characters
-  const numbers = value.replace(/\D/g, "");
-
-  // Handle different lengths
-  if (numbers.length <= 2) {
-    return numbers;
-  } else if (numbers.length <= 4) {
-    return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
-  } else {
-    return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(
-      4,
-      7
-    )}`;
-  }
-};
-
-// Custom time input component
-const TimeInput = ({ value, onChange, error, helperText }) => {
+const TimeInput = ({ value, onChange, error, helperText, label }) => {
   const [localValue, setLocalValue] = useState(value || "");
 
   const handleChange = (e) => {
     const newValue = formatTimeInput(e.target.value);
     setLocalValue(newValue);
 
-    // Only trigger onChange when we have a complete time
     const isComplete = /^\d{2}:\d{2}:\d{3}$/.test(newValue);
     if (isComplete) {
       onChange({ target: { value: newValue } });
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.stopPropagation();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const saveButton = document.querySelector('[aria-label="Save"]');
+      if (saveButton) {
+        saveButton.click();
+      }
+    }
+  };
+
   return (
     <TextField
+      label={label}
       size="small"
       value={localValue}
       onChange={handleChange}
+      onKeyDown={handleKeyDown}
       error={error}
       helperText={helperText}
       placeholder="00:00:000"
+      fullWidth
       inputProps={{
         style: { fontFamily: "monospace" },
       }}
@@ -90,11 +68,27 @@ const TimeInput = ({ value, onChange, error, helperText }) => {
 };
 
 const BubbleTable = () => {
+  const theme = useTheme();
   const [validationErrors, setValidationErrors] = useState({});
   const bubbles = useBubbleStore((state) => state.bubbles);
   const addBubble = useBubbleStore((state) => state.addBubble);
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const deleteBubble = useBubbleStore((state) => state.deleteBubble);
+
+  const handleKeyDown = useCallback((e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const saveButton = document.querySelector('[aria-label="Save"]');
+      if (saveButton) {
+        saveButton.click();
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   const validateTimeFormat = (timeString) => {
     if (!timeString) return false;
@@ -107,7 +101,7 @@ const BubbleTable = () => {
       {
         accessorKey: "layer",
         header: "Layer",
-        size: 90,
+        size: 80,
         Edit: ({ row }) => (
           <TextField
             select
@@ -116,7 +110,7 @@ const BubbleTable = () => {
             onChange={(e) => {
               row._valuesCache.layer = e.target.value;
             }}
-            sx={{ minWidth: 80 }}
+            sx={{ minWidth: 60 }}
           >
             {[1, 2, 3, 4, 5, 6].map((num) => (
               <MenuItem key={num} value={String(num)}>
@@ -128,12 +122,17 @@ const BubbleTable = () => {
         Cell: ({ cell }) => (
           <Box
             sx={{
-              bgcolor: "grey.100",
+              bgcolor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "grey.100",
+              color: theme.palette.mode === "dark" ? "grey.300" : "grey.800",
               borderRadius: 1,
               px: 1,
               py: 0.5,
               textAlign: "center",
               width: "fit-content",
+              minWidth: "30px",
             }}
           >
             {cell.getValue() || 1}
@@ -148,6 +147,15 @@ const BubbleTable = () => {
           size: "small",
           error: !!validationErrors?.bubbleName,
           helperText: validationErrors?.bubbleName,
+          onKeyDown: (e) => {
+            if (
+              ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                e.key
+              )
+            ) {
+              e.stopPropagation();
+            }
+          },
         },
       },
       {
@@ -196,7 +204,6 @@ const BubbleTable = () => {
           />
         ),
         Edit: ({ cell, column, row, table }) => {
-          // Check if we're creating a new row
           const isCreating = table.getState().creatingRow;
           const initialColor = isCreating
             ? generateRandomColor()
@@ -210,7 +217,6 @@ const BubbleTable = () => {
                   ...row._valuesCache,
                   [column.id]: newColor,
                 };
-                // If we're creating, update the creating row's value
                 if (isCreating) {
                   table.setCreatingRow({
                     ...table.getState().creatingRow,
@@ -221,29 +227,22 @@ const BubbleTable = () => {
             />
           );
         },
-        muiEditTextFieldProps: {
-          required: true,
-        },
       },
     ],
-    [validationErrors, updateBubble]
+    [theme.palette.mode, validationErrors, updateBubble]
   );
 
   const validateBubble = (bubble) => {
     const errors = {};
-
     if (!bubble.bubbleName?.trim()) {
       errors.bubbleName = "Name is required";
     }
-
     if (!validateTimeFormat(bubble.startTime)) {
       errors.startTime = "Invalid time format (MM:SS:mmm)";
     }
-
     if (!validateTimeFormat(bubble.stopTime)) {
       errors.stopTime = "Invalid time format (MM:SS:mmm)";
     }
-
     return errors;
   };
 
@@ -260,10 +259,9 @@ const BubbleTable = () => {
       bubbleName: values.bubbleName.trim(),
       startTime: values.startTime,
       stopTime: values.stopTime,
-      color: generateRandomColor(),
+      color: values.color || generateRandomColor(),
     };
 
-    console.log("Creating new bubble:", newBubble);
     setValidationErrors({});
     addBubble(newBubble);
     table.setCreatingRow(null);
@@ -282,10 +280,19 @@ const BubbleTable = () => {
       layer: values.layer || "1",
     };
 
-    console.log("Updating bubble:", updatedBubble);
     setValidationErrors({});
     updateBubble(values.id, updatedBubble);
     table.setEditingRow(null);
+  };
+
+  const handleBulkDelete = (rows) => {
+    if (
+      window.confirm(`Are you sure you want to delete ${rows.length} bubbles?`)
+    ) {
+      rows.forEach((row) => {
+        deleteBubble(row.original.id);
+      });
+    }
   };
 
   const table = useMaterialReactTable({
@@ -296,84 +303,87 @@ const BubbleTable = () => {
     enableEditing: true,
     positionActionsColumn: "last",
     getRowId: (row) => row.id,
-    enableToolbarInternalActions: false,
+
+    // Disable all extra features
     enableColumnActions: false,
     enableColumnFilters: false,
     enablePagination: false,
     enableSorting: false,
-    enableTopToolbar: true,
-    muiTablePaperProps: {
-      elevation: 0,
-      sx: {
-        borderRadius: "8px",
-        border: "1px solid #e0e0e0",
-      },
-    },
-    muiTableProps: {
-      sx: {
-        tableLayout: "fixed",
-      },
-    },
-    muiTableBodyRowProps: {
-      sx: {
-        "&:hover td": {
-          backgroundColor: "rgba(0, 0, 0, 0.04)",
-        },
-      },
-    },
-    muiTableBodyCellProps: {
-      sx: {
-        fontSize: "0.875rem",
-        py: 1,
-      },
-    },
+    enableRowSelection: false,
+    enableColumnOrdering: false,
+    enableColumnResizing: false,
+    enableHiding: false,
+    enableFilters: false,
+    enableFullScreen: false,
+    enableGlobalFilter: false,
+
+    // Only show density adjustment
+    enableDensityToggle: true,
+    enableToolbarInternalActions: false,
+
+    // Custom toolbar with just density toggle
+    renderTopToolbarCustomActions: undefined,
+    renderToolbarInternalActions: ({ table }) => (
+      <Box>
+        <IconButton
+          onClick={() =>
+            table.setDensity(
+              table.getState().density === "compact" ? "comfortable" : "compact"
+            )
+          }
+        >
+          <Tooltip title="Toggle Density">
+            {table.getState().density === "compact" ? (
+              <TableRowsIcon />
+            ) : (
+              <ViewHeadlineIcon />
+            )}
+          </Tooltip>
+        </IconButton>
+      </Box>
+    ),
+
+    // Row action buttons (Edit/Delete)
     renderRowActions: ({ row, table }) => (
-      <Box
-        sx={{
-          display: "flex",
-          gap: "0.5rem",
-          opacity: 0.7,
-          transition: "opacity 0.2s",
-          "&:hover": {
-            opacity: 1,
-          },
-        }}
-      >
+      <Box sx={{ display: "flex", gap: "0.5rem" }}>
         {table.getState().editingRow?.id === row.id ? (
           <>
-            <ActionButton
+            <IconButton
               onClick={() => table.setEditingRow(null)}
               color="error"
               size="small"
+              aria-label="Cancel"
             >
-              <Tooltip title="Cancel">
+              <Tooltip title="Cancel (Esc)">
                 <CancelIcon />
               </Tooltip>
-            </ActionButton>
-            <ActionButton
+            </IconButton>
+            <IconButton
               onClick={() => table.handleSaveRow(row)}
               color="success"
               size="small"
+              aria-label="Save"
             >
-              <Tooltip title="Save">
+              <Tooltip title="Save (⌘/Ctrl + Enter)">
                 <SaveIcon />
               </Tooltip>
-            </ActionButton>
+            </IconButton>
           </>
         ) : (
           <>
-            <ActionButton
+            <IconButton
               onClick={() => {
                 row._valuesCache = { ...row.original };
                 table.setEditingRow(row);
               }}
               size="small"
+              aria-label="Edit"
             >
               <Tooltip title="Edit">
                 <EditIcon />
               </Tooltip>
-            </ActionButton>
-            <ActionButton
+            </IconButton>
+            <IconButton
               color="error"
               onClick={() => {
                 if (
@@ -383,15 +393,83 @@ const BubbleTable = () => {
                 }
               }}
               size="small"
+              aria-label="Delete"
             >
               <Tooltip title="Delete">
                 <DeleteIcon />
               </Tooltip>
-            </ActionButton>
+            </IconButton>
           </>
         )}
       </Box>
     ),
+
+    muiTablePaperProps: {
+      elevation: 0,
+      sx: {
+        borderRadius: "8px",
+        border: `1px solid ${theme.palette.divider}`,
+        overflow: "hidden",
+      },
+    },
+    muiTableProps: {
+      sx: {
+        "& .MuiTableCell-root": {
+          px: { xs: 1, sm: 2 },
+          py: 1,
+          whiteSpace: "nowrap",
+        },
+        "& .MuiTableBody-root .MuiTableCell-root": {
+          fontSize: "0.875rem",
+        },
+      },
+    },
+    muiTableBodyRowProps: {
+      sx: {
+        "&:hover td": {
+          bgcolor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.04)"
+              : "rgba(0, 0, 0, 0.04)",
+        },
+      },
+    },
+    muiTableBodyCellProps: {
+      sx: {
+        fontSize: "0.875rem",
+        py: 0.75,
+      },
+    },
+    muiTableContainerProps: {
+      sx: {
+        maxHeight: { xs: "400px", sm: "600px" },
+        maxWidth: "100%",
+        overflow: "auto",
+        "&::-webkit-scrollbar": {
+          height: 8,
+          width: 8,
+        },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.05)"
+              : "rgba(0, 0, 0, 0.05)",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          borderRadius: 4,
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(0, 0, 0, 0.2)",
+          "&:hover": {
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(255, 255, 255, 0.3)"
+                : "rgba(0, 0, 0, 0.3)",
+          },
+        },
+      },
+    },
 
     onCreatingRowCancel: () => setValidationErrors({}),
     onCreatingRowSave: handleCreateBubble,
@@ -399,7 +477,11 @@ const BubbleTable = () => {
     onEditingRowSave: handleSaveBubble,
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <MaterialReactTable table={table} />
+    </Box>
+  );
 };
 
 export default BubbleTable;
