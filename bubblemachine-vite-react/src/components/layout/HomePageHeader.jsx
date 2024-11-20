@@ -10,6 +10,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const bubbles = useBubbleStore((state) => state.bubbles);
   const addBubble = useBubbleStore((state) => state.addBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
+  const comments = useCommentsStore((state) => state.comments);
 
   // Styles
   const containerStyles = {
@@ -86,62 +87,6 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     },
   };
 
-  // Handle Import
-  const handleImport = () => {
-    if (!hasFile) {
-      alert("Please load an audio file before importing bubble data");
-      return;
-    }
-
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = ".json";
-
-    fileInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const importedData = JSON.parse(event.target.result);
-
-            // Validate imported data format
-            if (!Array.isArray(importedData)) {
-              throw new Error("Invalid data format");
-            }
-
-            // Confirm if user wants to clear existing bubbles
-            if (bubbles.length > 0) {
-              const confirmClear = window.confirm(
-                "Importing will replace existing bubbles. Do you want to continue?"
-              );
-              if (!confirmClear) return;
-            }
-
-            // Clear existing bubbles
-            clearBubbles();
-
-            // Import new bubbles
-            importedData.forEach((bubble) => {
-              addBubble({
-                ...bubble,
-                id: bubble.id,
-              });
-            });
-
-            alert("Bubbles imported successfully!");
-          } catch (error) {
-            console.error("Import error:", error);
-            alert("Error importing bubble data. Please check the file format.");
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-
-    fileInput.click();
-  };
-
   const handleExport = () => {
     if (!hasFile) {
       alert("Please load an audio file before exporting data");
@@ -154,9 +99,6 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     }
 
     try {
-      // Fetch comments data
-      const comments = useCommentsStore((state) => state.comments);
-
       // Prepare the data for export
       const exportData = {
         bubbles: bubbles.map((bubble) => ({
@@ -192,6 +134,71 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
     }
   };
 
+  const handleImport = () => {
+    if (!hasFile) {
+      alert("Please load an audio file before importing bubble data");
+      return;
+    }
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result);
+
+            // Validate imported data format
+            if (!importedData.bubbles || !importedData.comments) {
+              throw new Error("Invalid data format");
+            }
+
+            // Confirm if user wants to clear existing data
+            if (bubbles.length > 0 || comments.length > 0) {
+              const confirmClear = window.confirm(
+                "Importing will replace existing data. Do you want to continue?"
+              );
+              if (!confirmClear) return;
+            }
+
+            // Clear existing bubbles
+            clearBubbles();
+
+            // Clear existing comments
+            useCommentsStore.getState().clearComments();
+
+            // Import new bubbles
+            importedData.bubbles.forEach((bubble) => {
+              addBubble({
+                ...bubble,
+                id: bubble.id,
+              });
+            });
+
+            // Import new comments
+            importedData.comments.forEach((comment) => {
+              useCommentsStore.getState().addComment({
+                ...comment,
+                id: comment.id,
+              });
+            });
+
+            alert("Data imported successfully!");
+          } catch (error) {
+            console.error("Import error:", error);
+            alert("Error importing data. Please check the file format.");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+
+    fileInput.click();
+  };
   return (
     <Box sx={containerStyles}>
       {/* Control buttons - now all in one group */}

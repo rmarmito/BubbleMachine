@@ -127,20 +127,20 @@ export default function HomePage() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
-          width: "100%",
+          flexDirection: { xs: "column", md: "row" },
           gap: 2,
           mt: 2,
+          width: "100%",
         }}
       >
-        {/* Left Side - All Current Bubbles */}
-        <Box sx={{ flex: 1 }}>
+        {/* BubbleTable Container */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <PrimaryContainer
             label="New Bubble"
             labelColor="white"
-            title={"All Current Bubbles"}
+            title="All Current Bubbles"
             titleColor="#FF0000"
-            info={"Contains all bubble information across all layers"}
+            info="Contains all bubble information across all layers"
           >
             <BubbleTable
               isAudioLoaded={isAudioLoaded}
@@ -149,14 +149,14 @@ export default function HomePage() {
           </PrimaryContainer>
         </Box>
 
-        {/* Right Side - All Comments */}
-        <Box sx={{ flex: 1 }}>
+        {/* CommentsTable Container */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <PrimaryContainer
             label="Comments"
             labelColor="white"
-            title={"All Comments"}
+            title="All Comments"
             titleColor="#FF0000"
-            info={"Contains all comments"}
+            info="Contains all comments"
           >
             <CommentsTable />
           </PrimaryContainer>

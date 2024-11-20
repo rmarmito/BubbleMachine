@@ -75,6 +75,7 @@ const WaveformVis = ({
         end: convertToSeconds(selectedBubble.stopTime),
         color: colorToRGB(selectedBubble.color),
         resize: true,
+        drag: false,
       });
     }
   }, [selectedBubble, wavesurfer]);
@@ -172,7 +173,7 @@ const WaveformVis = ({
     const initializeWavesurfer = () => {
       // Initialize new WaveSurfer instance
       regionsPluginRef.current = RegionsPlugin.create({
-        dragSelection: false,
+        drag: false,
         snapToGrid: 0.1,
       });
 
@@ -191,9 +192,9 @@ const WaveformVis = ({
         progressColor: "#4E9EE7",
         cursorColor: "#4E9EE7",
         height: 128,
-        autoCenter: true,
+        autoCenter: false,
         fillParent: true,
-        scrollParent: true,
+        scrollParent: false,
         renderer: "WebGL2",
         pixelRatio: 1,
         normalize: true,
@@ -305,6 +306,7 @@ const WaveformVis = ({
   useEffect(() => {
     if (selectedBubble && wavesurfer) {
       const startTime = convertToSeconds(selectedBubble.startTime);
+
       wavesurfer.pause();
       wavesurfer.seekTo(startTime / wavesurfer.getDuration());
       wavesurfer.play(startTime);
