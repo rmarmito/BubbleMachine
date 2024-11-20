@@ -22,6 +22,25 @@ import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { createID, generateRandomColor } from "../../helpers/utils.jsx";
 import ColorPickerCell from "./ColorPickerCell.jsx";
 
+const formatTimeInput = (value) => {
+  if (!value) return "";
+
+  // Remove all non-numeric characters
+  const numbers = value.replace(/\D/g, "");
+
+  // Handle different lengths
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+  } else {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(
+      4,
+      7
+    )}`;
+  }
+};
+
 const TimeInput = ({ value, onChange, error, helperText, label }) => {
   const [localValue, setLocalValue] = useState(value || "");
 
