@@ -21,6 +21,25 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
   const addComment = useCommentsStore((state) => state.addComment);
   const { darkMode } = useTheme(); // Get darkMode from your theme context
 
+  const commentInput = (
+    <TextField
+      label="Comment"
+      value={commentText}
+      onChange={(e) => setCommentText(e.target.value)}
+      fullWidth
+      autoFocus
+      multiline
+      maxRows={2}
+      variant="outlined"
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          backgroundColor: darkMode ? "#1E1E2E" : undefined,
+          height: "100%",
+        },
+      }}
+    />
+  );
+
   const markStartTime = () => {
     if (wavesurfer) {
       const currentTime = wavesurfer.getCurrentTime();
@@ -104,11 +123,17 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
             sx={{
               height: "100%",
               background: "none",
+              backgroundColor: "transparent",
               color: "white",
               fontWeight: 500,
               fontSize: "0.95rem",
               textTransform: "none",
+              boxShadow: "none",
+              "&.MuiButton-contained": {
+                backgroundColor: "transparent",
+              },
               "&:hover": {
+                boxShadow: "none",
                 background: disabled
                   ? "none"
                   : darkMode
@@ -132,7 +157,6 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
     <Fade in={isCreating}>
       <Box sx={{ width: "100%" }}>
         <Stack spacing={1}>
-          {/* Start and End Time Buttons */}
           <Grid container spacing={1}>
             <Grid item xs={6}>
               <Button
@@ -140,29 +164,26 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 onClick={markStartTime}
                 startIcon={<Flag />}
                 fullWidth
+                color={selectedStartTime !== null ? "success" : "primary"}
                 sx={{
                   justifyContent: "center",
                   height: "38px",
                   px: 1,
-                  backgroundColor: selectedStartTime
-                    ? darkMode
-                      ? "#1E4620" // Green for dark mode
-                      : "success.main" // Green for light mode
-                    : darkMode
-                    ? "#1E1E2E"
-                    : "primary.main",
+                  backgroundColor: darkMode
+                    ? selectedStartTime !== null
+                      ? "#1E4620" // Green for dark mode when selected
+                      : "#1E1E2E"
+                    : undefined,
                   "&:hover": {
-                    backgroundColor: selectedStartTime
-                      ? darkMode
-                        ? "#2E5730"
-                        : "success.dark"
-                      : darkMode
-                      ? "#2A2A3E"
-                      : "primary.dark",
+                    backgroundColor: darkMode
+                      ? selectedStartTime !== null
+                        ? "#2E5730" // Darker green on hover
+                        : "#2A2A3E"
+                      : undefined,
                   },
                 }}
               >
-                Start
+                {selectedStartTime !== null ? "Set Start" : "Start"}
               </Button>
             </Grid>
             <Grid item xs={6}>

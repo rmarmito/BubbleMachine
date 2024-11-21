@@ -47,7 +47,8 @@ const WaveformVis = ({
   // Refs
   const waveformRef = useRef(null);
   const regionsPluginRef = useRef(null);
-
+  const [isCreating, setIsCreating] = useState(false);
+  const [commentText, setCommentText] = useState("");
   // State Management
   const [wavesurfer, setWavesurfer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -440,12 +441,23 @@ const WaveformVis = ({
             width: "100%",
           }}
         >
-          <CommentDisplay wavesurfer={wavesurfer} />
+          <CommentDisplay
+            wavesurfer={wavesurfer}
+            isCreating={isCreating}
+            commentText={commentText}
+            setCommentText={setCommentText}
+          />
         </Box>
 
         {/* Column 4 - Comment Creator */}
         <Box>
-          <CommentCreator wavesurfer={wavesurfer} disabled={!audioFile} />
+          <CommentCreator
+            wavesurfer={wavesurfer}
+            isCreating={isCreating}
+            setIsCreating={setIsCreating}
+            commentText={commentText}
+            setCommentText={setCommentText}
+          />
         </Box>
 
         {/* Column 5 - Bubble Creator */}
