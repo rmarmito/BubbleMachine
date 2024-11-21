@@ -12,19 +12,35 @@ const CommentDisplay = ({ wavesurfer }) => {
   // Throttled function to update current comment
   const updateCurrentComment = useCallback(
     throttle((time) => {
-      const activeComment = comments.find(
-        (comment) =>
-          time >= comment.startTime &&
-          time <= comment.endTime &&
-          (currentComment ? comment.id !== currentComment.id : true)
+      // Find all active comments at the current time
+      const activeComments = comments.filter(
+        (comment) => time >= comment.startTime && time <= comment.endTime
       );
 
-      if (activeComment) {
-        setCurrentComment(activeComment);
+      // If no active comments, clear the current comment
+      if (activeComments.length === 0) {
+        setCurrentComment(null);
+        return;
       }
 
-      // Hide the comment after its end time
-      if (currentComment && time > currentComment.endTime) {
+      // Sort active comments by start time (latest first)
+      const sortedComments = activeComments.sort(
+        (a, b) => b.startTime - a.startTime
+      );
+
+      // Get the most recent comment (first in sorted array)
+      const latestComment = sortedComments[0];
+
+      // Only update if we're showing a different comment
+      if (!currentComment || currentComment.id !== latestComment.id) {
+        setCurrentComment(latestComment);
+      }
+
+      // Hide comment if current time is outside its window
+      if (
+        currentComment &&
+        (time < currentComment.startTime || time > currentComment.endTime)
+      ) {
         setCurrentComment(null);
       }
     }, 200),
@@ -38,14 +54,24 @@ const CommentDisplay = ({ wavesurfer }) => {
     }
   }, [comments]);
 
+  // Set up wavesurfer event listener
   useEffect(() => {
     if (wavesurfer) {
       const onAudioProcess = (time) => {
         updateCurrentComment(time);
       };
+
+      // Also listen for seeking events to update comments immediately when seeking
+      const onSeek = (time) => {
+        updateCurrentComment(time);
+      };
+
       wavesurfer.on("audioprocess", onAudioProcess);
+      wavesurfer.on("seek", onSeek);
+
       return () => {
         wavesurfer.un("audioprocess", onAudioProcess);
+        wavesurfer.un("seek", onSeek);
       };
     }
   }, [wavesurfer, updateCurrentComment]);
@@ -71,7 +97,6 @@ const CommentDisplay = ({ wavesurfer }) => {
           theme.palette.mode === "dark" ? "#2A2A3E" : "rgba(0, 0, 0, 0.12)",
       }}
     >
-      {/* Current Comment Display */}
       {currentComment && (
         <Box
           sx={{
