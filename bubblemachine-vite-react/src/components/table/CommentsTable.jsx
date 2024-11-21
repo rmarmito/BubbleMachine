@@ -11,6 +11,71 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import useCommentsStore from "../zustand/commentsStore";
 import { formatTime, convertToSeconds } from "../../helpers/utils";
 
+// Add formatTimeInput function to match BubbleTable
+const formatTimeInput = (value) => {
+  if (!value) return "";
+
+  // Remove all non-numeric characters
+  const numbers = value.replace(/\D/g, "");
+
+  // Handle different lengths
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+  } else {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(
+      4,
+      7
+    )}`;
+  }
+};
+
+const TimeInput = ({ value, onChange, error, helperText, label }) => {
+  const [localValue, setLocalValue] = useState(value || "");
+
+  const handleChange = (e) => {
+    const newValue = formatTimeInput(e.target.value);
+    setLocalValue(newValue);
+
+    const isComplete = /^\d{2}:\d{2}:\d{3}$/.test(newValue);
+    if (isComplete) {
+      onChange({ target: { value: newValue } });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.stopPropagation();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const saveButton = document.querySelector('[aria-label="Save"]');
+      if (saveButton) {
+        saveButton.click();
+      }
+    }
+  };
+
+  return (
+    <TextField
+      label={label}
+      size="small"
+      value={localValue}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      error={error}
+      helperText={helperText}
+      placeholder="00:00:000"
+      fullWidth
+      inputProps={{
+        style: { fontFamily: "monospace" },
+      }}
+    />
+  );
+};
+
 const CommentsTable = () => {
   const theme = useTheme();
   const [validationErrors, setValidationErrors] = useState({});
@@ -35,39 +100,8 @@ const CommentsTable = () => {
 
   const validateTimeFormat = (timeString) => {
     if (!timeString) return false;
-    const regex = /^([0-5]?\d):([0-5]?\d):(\d{3})$/;
+    const regex = /^([0-5]?\d):([0-5]\d):(\d{3})$/;
     return regex.test(timeString);
-  };
-
-  const TimeInput = ({ value, onChange, error, helperText }) => {
-    const [localValue, setLocalValue] = useState(value || "");
-
-    const handleChange = (e) => {
-      setLocalValue(e.target.value);
-      onChange(e);
-    };
-
-    const handleTimeKeyDown = (e) => {
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-        e.stopPropagation();
-      }
-    };
-
-    return (
-      <TextField
-        size="small"
-        value={localValue}
-        onChange={handleChange}
-        onKeyDown={handleTimeKeyDown}
-        error={error}
-        helperText={helperText}
-        placeholder="00:00:000"
-        fullWidth
-        inputProps={{
-          style: { fontFamily: "monospace" },
-        }}
-      />
-    );
   };
 
   const columns = useMemo(
@@ -125,6 +159,14 @@ const CommentsTable = () => {
             ) {
               e.stopPropagation();
             }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              e.preventDefault();
+              const saveButton = document.querySelector('[aria-label="Save"]');
+              if (saveButton) {
+                saveButton.click();
+              }
+            }
           },
         },
       },
@@ -174,7 +216,7 @@ const CommentsTable = () => {
     positionActionsColumn: "last",
     getRowId: (row) => row.id,
 
-    // Disable all extra features to match BubbleTable
+    editDisplayMode: "row",
     enableColumnActions: false,
     enableColumnFilters: false,
     enablePagination: false,
@@ -186,8 +228,6 @@ const CommentsTable = () => {
     enableFilters: false,
     enableFullScreen: false,
     enableGlobalFilter: false,
-
-    // Only show density adjustment
     enableDensityToggle: true,
     enableToolbarInternalActions: false,
 
