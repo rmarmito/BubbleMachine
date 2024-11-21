@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { Box, IconButton, Tooltip, TextField } from "@mui/material";
+import { Box, IconButton, Tooltip, TextField, useTheme } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
@@ -12,10 +12,26 @@ import useCommentsStore from "../zustand/commentsStore";
 import { formatTime, convertToSeconds } from "../../helpers/utils";
 
 const CommentsTable = () => {
+  const theme = useTheme();
   const [validationErrors, setValidationErrors] = useState({});
   const comments = useCommentsStore((state) => state.comments);
   const updateComment = useCommentsStore((state) => state.updateComment);
   const deleteComment = useCommentsStore((state) => state.deleteComment);
+
+  const handleKeyDown = useCallback((e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const saveButton = document.querySelector('[aria-label="Save"]');
+      if (saveButton) {
+        saveButton.click();
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   const validateTimeFormat = (timeString) => {
     if (!timeString) return false;
@@ -23,17 +39,47 @@ const CommentsTable = () => {
     return regex.test(timeString);
   };
 
+  const TimeInput = ({ value, onChange, error, helperText }) => {
+    const [localValue, setLocalValue] = useState(value || "");
+
+    const handleChange = (e) => {
+      setLocalValue(e.target.value);
+      onChange(e);
+    };
+
+    const handleTimeKeyDown = (e) => {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        e.stopPropagation();
+      }
+    };
+
+    return (
+      <TextField
+        size="small"
+        value={localValue}
+        onChange={handleChange}
+        onKeyDown={handleTimeKeyDown}
+        error={error}
+        helperText={helperText}
+        placeholder="00:00:000"
+        fullWidth
+        inputProps={{
+          style: { fontFamily: "monospace" },
+        }}
+      />
+    );
+  };
+
   const columns = useMemo(
     () => [
       {
         accessorKey: "startTime",
         header: "Start Time",
-        size: 100,
+        size: 120,
         Cell: ({ cell }) => formatTime(cell.getValue()),
         Edit: ({ row }) => (
-          <TextField
-            size="small"
-            defaultValue={formatTime(row.original.startTime)}
+          <TimeInput
+            value={formatTime(row.original.startTime)}
             onChange={(e) => {
               const newValue = convertToSeconds(e.target.value);
               row._valuesCache.startTime = newValue;
@@ -46,12 +92,11 @@ const CommentsTable = () => {
       {
         accessorKey: "endTime",
         header: "End Time",
-        size: 100,
+        size: 120,
         Cell: ({ cell }) => formatTime(cell.getValue()),
         Edit: ({ row }) => (
-          <TextField
-            size="small"
-            defaultValue={formatTime(row.original.endTime)}
+          <TimeInput
+            value={formatTime(row.original.endTime)}
             onChange={(e) => {
               const newValue = convertToSeconds(e.target.value);
               row._valuesCache.endTime = newValue;
@@ -70,22 +115,15 @@ const CommentsTable = () => {
           multiline: true,
           minRows: 2,
           maxRows: 4,
+          error: !!validationErrors?.text,
+          helperText: validationErrors?.text,
           onKeyDown: (e) => {
-            // Stop propagation of arrow keys
             if (
               ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
                 e.key
               )
             ) {
               e.stopPropagation();
-            }
-            // Keep the Ctrl+Enter save functionality
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-              const table = document.querySelector(".MuiTable-root");
-              const saveButton = table.querySelector('[aria-label="Save"]');
-              if (saveButton) {
-                saveButton.click();
-              }
             }
           },
         },
@@ -124,48 +162,9 @@ const CommentsTable = () => {
       text: values.text.trim(),
     };
 
-    console.log("Updating comment:", updatedComment);
     setValidationErrors({});
     updateComment(values.id, updatedComment);
     table.setEditingRow(null);
-  };
-  // This component can be used in both BubbleTable and CommentsTable
-
-  const TimeInput = ({ value, onChange, error, helperText }) => {
-    const [localValue, setLocalValue] = useState(value || "");
-
-    const handleChange = (e) => {
-      const newValue = formatTimeInput(e.target.value);
-      setLocalValue(newValue);
-
-      // Only trigger onChange when we have a complete time
-      const isComplete = /^\d{2}:\d{2}:\d{3}$/.test(newValue);
-      if (isComplete) {
-        onChange({ target: { value: newValue } });
-      }
-    };
-
-    const handleKeyDown = (e) => {
-      // Stop propagation of all arrow keys to prevent table navigation
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-        e.stopPropagation();
-      }
-    };
-
-    return (
-      <TextField
-        size="small"
-        value={localValue}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        error={error}
-        helperText={helperText}
-        placeholder="00:00:000"
-        inputProps={{
-          style: { fontFamily: "monospace" },
-        }}
-      />
-    );
   };
 
   const table = useMaterialReactTable({
@@ -174,57 +173,35 @@ const CommentsTable = () => {
     enableEditing: true,
     positionActionsColumn: "last",
     getRowId: (row) => row.id,
-    enableToolbarInternalActions: false,
+
+    // Disable all extra features to match BubbleTable
     enableColumnActions: false,
     enableColumnFilters: false,
     enablePagination: false,
     enableSorting: false,
-    enableTopToolbar: true,
-    muiTablePaperProps: {
-      elevation: 0,
-      sx: {
-        borderRadius: "8px",
-        border: "1px solid #e0e0e0",
-      },
-    },
-    muiTableProps: {
-      sx: {
-        tableLayout: "fixed",
-      },
-    },
-    muiTableBodyRowProps: {
-      sx: {
-        "&:hover td": {
-          backgroundColor: "rgba(0, 0, 0, 0.04)",
-        },
-      },
-    },
-    muiTableBodyCellProps: {
-      sx: {
-        fontSize: "0.875rem",
-        py: 1,
-      },
-    },
+    enableRowSelection: false,
+    enableColumnOrdering: false,
+    enableColumnResizing: false,
+    enableHiding: false,
+    enableFilters: false,
+    enableFullScreen: false,
+    enableGlobalFilter: false,
+
+    // Only show density adjustment
+    enableDensityToggle: true,
+    enableToolbarInternalActions: false,
+
     renderRowActions: ({ row, table }) => (
-      <Box
-        sx={{
-          display: "flex",
-          gap: "0.5rem",
-          opacity: 0.7,
-          transition: "opacity 0.2s",
-          "&:hover": {
-            opacity: 1,
-          },
-        }}
-      >
+      <Box sx={{ display: "flex", gap: "0.5rem" }}>
         {table.getState().editingRow?.id === row.id ? (
           <>
             <IconButton
               onClick={() => table.setEditingRow(null)}
               color="error"
               size="small"
+              aria-label="Cancel"
             >
-              <Tooltip title="Cancel">
+              <Tooltip title="Cancel (Esc)">
                 <CancelIcon />
               </Tooltip>
             </IconButton>
@@ -232,8 +209,9 @@ const CommentsTable = () => {
               onClick={() => table.handleSaveRow(row)}
               color="success"
               size="small"
+              aria-label="Save"
             >
-              <Tooltip title="Save">
+              <Tooltip title="Save (⌘/Ctrl + Enter)">
                 <SaveIcon />
               </Tooltip>
             </IconButton>
@@ -246,6 +224,7 @@ const CommentsTable = () => {
                 table.setEditingRow(row);
               }}
               size="small"
+              aria-label="Edit"
             >
               <Tooltip title="Edit">
                 <EditIcon />
@@ -263,6 +242,7 @@ const CommentsTable = () => {
                 }
               }}
               size="small"
+              aria-label="Delete"
             >
               <Tooltip title="Delete">
                 <DeleteIcon />
@@ -273,11 +253,82 @@ const CommentsTable = () => {
       </Box>
     ),
 
+    muiTablePaperProps: {
+      elevation: 0,
+      sx: {
+        borderRadius: "8px",
+        border: `1px solid ${theme.palette.divider}`,
+        overflow: "hidden",
+      },
+    },
+    muiTableProps: {
+      sx: {
+        "& .MuiTableCell-root": {
+          px: { xs: 1, sm: 2 },
+          py: 1,
+          whiteSpace: "nowrap",
+        },
+        "& .MuiTableBody-root .MuiTableCell-root": {
+          fontSize: "0.875rem",
+        },
+      },
+    },
+    muiTableBodyRowProps: {
+      sx: {
+        "&:hover td": {
+          bgcolor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.04)"
+              : "rgba(0, 0, 0, 0.04)",
+        },
+      },
+    },
+    muiTableBodyCellProps: {
+      sx: {
+        fontSize: "0.875rem",
+        py: 0.75,
+      },
+    },
+    muiTableContainerProps: {
+      sx: {
+        maxHeight: { xs: "400px", sm: "600px" },
+        maxWidth: "100%",
+        overflow: "auto",
+        "&::-webkit-scrollbar": {
+          height: 8,
+          width: 8,
+        },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.05)"
+              : "rgba(0, 0, 0, 0.05)",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          borderRadius: 4,
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(0, 0, 0, 0.2)",
+          "&:hover": {
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(255, 255, 255, 0.3)"
+                : "rgba(0, 0, 0, 0.3)",
+          },
+        },
+      },
+    },
+
     onEditingRowCancel: () => setValidationErrors({}),
     onEditingRowSave: handleSaveComment,
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <MaterialReactTable table={table} />
+    </Box>
+  );
 };
 
 export default CommentsTable;
