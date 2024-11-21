@@ -16,6 +16,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const containerStyles = {
     width: "100%",
     padding: 2,
+    mt: -2,
     backgroundColor: darkMode ? "#1A1A2E" : "#2C3E50",
     borderBottom: `1px solid ${darkMode ? "#2A2A3E" : "#34495E"}`,
     display: "flex",
