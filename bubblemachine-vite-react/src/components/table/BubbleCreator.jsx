@@ -92,11 +92,17 @@ const BubbleCreator = ({ wavesurfer, disabled }) => {
             sx={{
               height: "100%",
               background: "none",
+              backgroundColor: "transparent",
               color: "white",
               fontWeight: 500,
               fontSize: "0.95rem",
               textTransform: "none",
+              boxShadow: "none",
+              "&.MuiButton-contained": {
+                backgroundColor: "transparent",
+              },
               "&:hover": {
+                boxShadow: "none",
                 background: disabled
                   ? "none"
                   : darkMode

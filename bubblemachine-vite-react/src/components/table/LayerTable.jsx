@@ -3,26 +3,87 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, TextField } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ColorPickerCell from "./ColorPickerCell";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { convertToMilliseconds, formatTime } from "../../helpers/utils.jsx";
 
+// Time Input Component
+const formatTimeInput = (value) => {
+  if (!value) return "";
+
+  // Remove all non-numeric characters
+  const numbers = value.replace(/\D/g, "");
+
+  // Handle different lengths
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+  } else {
+    return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(
+      4,
+      7
+    )}`;
+  }
+};
+
+const TimeInput = ({ value, onChange, error, helperText, label }) => {
+  const [localValue, setLocalValue] = useState(value || "");
+
+  const handleChange = (e) => {
+    const newValue = formatTimeInput(e.target.value);
+    setLocalValue(newValue);
+
+    const isComplete = /^\d{2}:\d{2}:\d{3}$/.test(newValue);
+    if (isComplete) {
+      onChange({ target: { value: newValue } });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.stopPropagation();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      const saveButton = document.querySelector('[aria-label="Save"]');
+      if (saveButton) {
+        saveButton.click();
+      }
+    }
+  };
+
+  return (
+    <TextField
+      label={label}
+      size="small"
+      value={localValue}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      error={error}
+      helperText={helperText}
+      placeholder="MM:SS:sss"
+      fullWidth
+      inputProps={{
+        style: { fontFamily: "monospace" },
+      }}
+    />
+  );
+};
+
 const LayerTable = ({ layer, bubbles }) => {
   const [validationErrors, setValidationErrors] = useState({});
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const deleteBubble = useBubbleStore((state) => state.deleteBubble);
 
-  const validateTimeInput = (timeString) => {
+  const validateTimeFormat = (timeString) => {
     if (!timeString) return false;
-    try {
-      const milliseconds = convertToMilliseconds(timeString);
-      return milliseconds > 0;
-    } catch (error) {
-      return false;
-    }
+    const regex = /^([0-5]?\d):([0-5]\d):(\d{3})$/;
+    return regex.test(timeString);
   };
 
   const columns = useMemo(
@@ -35,29 +96,46 @@ const LayerTable = ({ layer, bubbles }) => {
           error: !!validationErrors?.bubbleName,
           helperText: validationErrors?.bubbleName,
           size: "small",
+          onKeyDown: (e) => {
+            if (
+              ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                e.key
+              )
+            ) {
+              e.stopPropagation();
+            }
+          },
         },
       },
       {
         accessorKey: "startTime",
         header: "Start Time",
-        muiEditTextFieldProps: {
-          required: true,
-          error: !!validationErrors?.startTime,
-          helperText: validationErrors?.startTime || "Format: MM:SS:mmm",
-          size: "small",
-          placeholder: "00:00:000",
-        },
+        size: 120,
+        Edit: ({ row }) => (
+          <TimeInput
+            value={row._valuesCache.startTime}
+            onChange={(e) => {
+              row._valuesCache.startTime = e.target.value;
+            }}
+            error={!!validationErrors?.startTime}
+            helperText={validationErrors?.startTime}
+          />
+        ),
       },
       {
         accessorKey: "stopTime",
         header: "Stop Time",
-        muiEditTextFieldProps: {
-          required: true,
-          error: !!validationErrors?.stopTime,
-          helperText: validationErrors?.stopTime || "Format: MM:SS:mmm",
-          size: "small",
-          placeholder: "00:00:000",
-        },
+        size: 120,
+        Edit: ({ row }) => (
+          <TimeInput
+            value={row._valuesCache.stopTime}
+            onChange={(e) => {
+              row._valuesCache.stopTime = e.target.value;
+            }}
+            error={!!validationErrors?.stopTime}
+            helperText={validationErrors?.stopTime}
+          />
+        ),
       },
       {
         accessorKey: "color",
@@ -78,11 +156,10 @@ const LayerTable = ({ layer, bubbles }) => {
           <ColorPickerCell
             value={cell.getValue()}
             onChange={(newColor) => {
-              const updatedValues = {
+              row._valuesCache = {
                 ...row._valuesCache,
                 [column.id]: newColor,
               };
-              row._valuesCache = updatedValues;
             }}
           />
         ),
@@ -98,11 +175,11 @@ const LayerTable = ({ layer, bubbles }) => {
       errors.bubbleName = "Name is required";
     }
 
-    if (!validateTimeInput(bubble.startTime)) {
+    if (!validateTimeFormat(bubble.startTime)) {
       errors.startTime = "Invalid time format (MM:SS:mmm)";
     }
 
-    if (!validateTimeInput(bubble.stopTime)) {
+    if (!validateTimeFormat(bubble.stopTime)) {
       errors.stopTime = "Invalid time format (MM:SS:mmm)";
     }
 
@@ -138,8 +215,6 @@ const LayerTable = ({ layer, bubbles }) => {
         color: values.color,
       };
 
-      console.log("Saving bubble:", updatedBubble);
-
       // Update the bubble in the store
       updateBubble(updatedBubble.id, updatedBubble);
 
@@ -164,6 +239,7 @@ const LayerTable = ({ layer, bubbles }) => {
     enableColumnActions: false,
     enableColumnFilters: false,
     enablePagination: false,
+    editDisplayMode: "row",
     enableSorting: false,
     muiTableBodyCellProps: {
       sx: { fontSize: "0.875rem" },

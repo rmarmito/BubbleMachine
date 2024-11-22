@@ -4,27 +4,67 @@ import { useTheme } from "@mui/material/styles";
 import throttle from "lodash/throttle";
 import useCommentsStore from "../zustand/commentsStore";
 
-const CommentDisplay = ({ wavesurfer }) => {
+const CommentDisplay = ({
+  wavesurfer,
+  isCreating,
+  commentText,
+  setCommentText,
+  darkMode,
+}) => {
   const theme = useTheme();
   const comments = useCommentsStore((state) => state.comments);
   const [currentComment, setCurrentComment] = useState(null);
 
+  const renderCommentInput = isCreating && (
+    <TextField
+      label="Comment"
+      value={commentText}
+      onChange={(e) => setCommentText(e.target.value)}
+      fullWidth
+      autoFocus
+      multiline
+      maxRows={2}
+      variant="outlined"
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          backgroundColor: darkMode ? "#1E1E2E" : undefined,
+          height: "100%",
+        },
+      }}
+    />
+  );
   // Throttled function to update current comment
   const updateCurrentComment = useCallback(
     throttle((time) => {
-      const activeComment = comments.find(
-        (comment) =>
-          time >= comment.startTime &&
-          time <= comment.endTime &&
-          (currentComment ? comment.id !== currentComment.id : true)
+      // Find all active comments at the current time
+      const activeComments = comments.filter(
+        (comment) => time >= comment.startTime && time <= comment.endTime
       );
 
-      if (activeComment) {
-        setCurrentComment(activeComment);
+      // If no active comments, clear the current comment
+      if (activeComments.length === 0) {
+        setCurrentComment(null);
+        return;
       }
 
-      // Hide the comment after its end time
-      if (currentComment && time > currentComment.endTime) {
+      // Sort active comments by start time (latest first)
+      const sortedComments = activeComments.sort(
+        (a, b) => b.startTime - a.startTime
+      );
+
+      // Get the most recent comment (first in sorted array)
+      const latestComment = sortedComments[0];
+
+      // Only update if we're showing a different comment
+      if (!currentComment || currentComment.id !== latestComment.id) {
+        setCurrentComment(latestComment);
+      }
+
+      // Hide comment if current time is outside its window
+      if (
+        currentComment &&
+        (time < currentComment.startTime || time > currentComment.endTime)
+      ) {
         setCurrentComment(null);
       }
     }, 200),
@@ -38,14 +78,24 @@ const CommentDisplay = ({ wavesurfer }) => {
     }
   }, [comments]);
 
+  // Set up wavesurfer event listener
   useEffect(() => {
     if (wavesurfer) {
       const onAudioProcess = (time) => {
         updateCurrentComment(time);
       };
+
+      // Also listen for seeking events to update comments immediately when seeking
+      const onSeek = (time) => {
+        updateCurrentComment(time);
+      };
+
       wavesurfer.on("audioprocess", onAudioProcess);
+      wavesurfer.on("seek", onSeek);
+
       return () => {
         wavesurfer.un("audioprocess", onAudioProcess);
+        wavesurfer.un("seek", onSeek);
       };
     }
   }, [wavesurfer, updateCurrentComment]);
@@ -71,34 +121,35 @@ const CommentDisplay = ({ wavesurfer }) => {
           theme.palette.mode === "dark" ? "#2A2A3E" : "rgba(0, 0, 0, 0.12)",
       }}
     >
-      {/* Current Comment Display */}
-      {currentComment && (
-        <Box
-          sx={{
-            px: 2,
-            py: 1,
-            maxWidth: "100%",
-            maxHeight: "100%",
-            bgcolor: theme.palette.action.hover,
-            borderRadius: 2,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-            textAlign: "center",
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: "1rem",
-              lineHeight: 1.2,
-            }}
-          >
-            {currentComment.text}
-          </Typography>
-        </Box>
-      )}
+      {isCreating
+        ? renderCommentInput
+        : currentComment && (
+            <Box
+              sx={{
+                px: 2,
+                py: 1,
+                maxWidth: "100%",
+                maxHeight: "100%",
+                bgcolor: theme.palette.action.hover,
+                borderRadius: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+                textAlign: "center",
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: "1rem",
+                  lineHeight: 1.2,
+                }}
+              >
+                {currentComment.text}
+              </Typography>
+            </Box>
+          )}
     </Paper>
   );
 };
