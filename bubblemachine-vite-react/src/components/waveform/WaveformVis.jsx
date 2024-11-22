@@ -451,24 +451,12 @@ const WaveformVis = ({
 
         {/* Column 4 - Comment Creator */}
         <Box>
-          <CommentCreator
-            wavesurfer={wavesurfer}
-            isCreating={isCreating}
-            setIsCreating={setIsCreating}
-            commentText={commentText}
-            setCommentText={setCommentText}
-          />
+          <CommentCreator wavesurfer={wavesurfer} disabled={!audioFile} />
         </Box>
 
         {/* Column 5 - Bubble Creator */}
         <Box>
-          <BubbleCreator
-            wavesurfer={wavesurfer}
-            disabled={!audioFile}
-            onCancel={() => {
-              // Optional: Add any cleanup needed when canceling bubble creation
-            }}
-          />
+          <BubbleCreator wavesurfer={wavesurfer} disabled={!audioFile} />
         </Box>
       </Box>
     </Box>

@@ -11,7 +11,7 @@ import {
 import { Flag, AddCircleOutline, Cancel } from "@mui/icons-material";
 import { createID } from "../../helpers/utils";
 import useCommentsStore from "../zustand/commentsStore";
-import { useTheme } from "../../styles/context/ThemeContext"; // Use your custom theme context
+import { useTheme } from "../../styles/context/ThemeContext";
 
 const CommentCreator = ({ wavesurfer, disabled }) => {
   const [isCreating, setIsCreating] = useState(false);
@@ -19,26 +19,7 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
   const [selectedEndTime, setSelectedEndTime] = useState(null);
   const [commentText, setCommentText] = useState("");
   const addComment = useCommentsStore((state) => state.addComment);
-  const { darkMode } = useTheme(); // Get darkMode from your theme context
-
-  const commentInput = (
-    <TextField
-      label="Comment"
-      value={commentText}
-      onChange={(e) => setCommentText(e.target.value)}
-      fullWidth
-      autoFocus
-      multiline
-      maxRows={2}
-      variant="outlined"
-      sx={{
-        "& .MuiOutlinedInput-root": {
-          backgroundColor: darkMode ? "#1E1E2E" : undefined,
-          height: "100%",
-        },
-      }}
-    />
-  );
+  const { darkMode } = useTheme();
 
   const markStartTime = () => {
     if (wavesurfer) {
@@ -81,6 +62,11 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
     setSelectedEndTime(null);
     setCommentText("");
   };
+
+  const isSaveEnabled =
+    selectedStartTime !== null &&
+    selectedEndTime !== null &&
+    commentText.trim();
 
   if (!isCreating) {
     return (
@@ -149,10 +135,6 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
     );
   }
 
-  if (disabled) {
-    return null;
-  }
-
   return (
     <Fade in={isCreating}>
       <Box sx={{ width: "100%" }}>
@@ -166,18 +148,21 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 fullWidth
                 color={selectedStartTime !== null ? "success" : "primary"}
                 sx={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   height: "38px",
                   px: 1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                   backgroundColor: darkMode
                     ? selectedStartTime !== null
-                      ? "#1E4620" // Green for dark mode when selected
+                      ? "#1E4620"
                       : "#1E1E2E"
                     : undefined,
                   "&:hover": {
                     backgroundColor: darkMode
                       ? selectedStartTime !== null
-                        ? "#2E5730" // Darker green on hover
+                        ? "#2E5730"
                         : "#2A2A3E"
                       : undefined,
                   },
@@ -193,22 +178,24 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 disabled={selectedStartTime === null}
                 startIcon={<Flag />}
                 fullWidth
+                color={selectedEndTime !== null ? "success" : "primary"}
                 sx={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   height: "38px",
                   px: 1,
-                  backgroundColor: selectedStartTime
-                    ? darkMode
-                      ? "#1E1E2E"
-                      : "primary.main"
-                    : darkMode
-                    ? "#1E1E2E"
-                    : "grey.300",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  backgroundColor: darkMode
+                    ? selectedEndTime !== null
+                      ? "#1E4620"
+                      : "#1E1E2E"
+                    : undefined,
                   "&:hover": {
-                    backgroundColor: selectedStartTime
-                      ? darkMode
-                        ? "#2A2A3E"
-                        : "primary.dark"
+                    backgroundColor: darkMode
+                      ? selectedEndTime !== null
+                        ? "#2E5730"
+                        : "#2A2A3E"
                       : undefined,
                   },
                   "&:disabled": {
@@ -216,12 +203,11 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                   },
                 }}
               >
-                End
+                {selectedEndTime !== null ? "Set End" : "End"}
               </Button>
             </Grid>
           </Grid>
 
-          {/* Comment Input */}
           <TextField
             label="Comment"
             value={commentText}
@@ -237,7 +223,6 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
             }}
           />
 
-          {/* Cancel and Save Buttons */}
           <Grid container spacing={1}>
             <Grid item xs={6}>
               <Button
@@ -247,7 +232,7 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
                 color="error"
                 fullWidth
                 sx={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   height: "38px",
                   px: 1,
                   border: "2px solid",
@@ -269,43 +254,29 @@ const CommentCreator = ({ wavesurfer, disabled }) => {
               <Button
                 variant="contained"
                 onClick={handleSave}
-                color="primary"
                 fullWidth
+                disabled={!isSaveEnabled}
                 sx={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   height: "38px",
                   px: 1,
-                  backgroundColor:
-                    selectedStartTime !== null &&
-                    selectedEndTime !== null &&
-                    commentText.trim()
-                      ? darkMode
-                        ? "#0A74DA" // Blue for dark mode
-                        : "info.main" // Blue for light mode
-                      : darkMode
-                      ? "#1E1E2E"
-                      : "grey.300",
+                  color: isSaveEnabled ? "white" : undefined,
+                  backgroundColor: isSaveEnabled
+                    ? "#003366" // Midnight navy color when enabled
+                    : darkMode
+                    ? "#1E1E2E"
+                    : undefined,
                   "&:hover": {
-                    backgroundColor:
-                      selectedStartTime !== null &&
-                      selectedEndTime !== null &&
-                      commentText.trim()
-                        ? darkMode
-                          ? "#0C86F5"
-                          : "info.dark"
-                        : darkMode
-                        ? "#2A2A3E"
-                        : undefined,
+                    backgroundColor: isSaveEnabled
+                      ? "#002244" // Slightly darker shade on hover
+                      : darkMode
+                      ? "#2A2A3E"
+                      : undefined,
                   },
                   "&:disabled": {
                     backgroundColor: darkMode ? "#141422" : "grey.300",
                   },
                 }}
-                disabled={
-                  selectedStartTime === null ||
-                  selectedEndTime === null ||
-                  !commentText.trim()
-                }
               >
                 Save
               </Button>
