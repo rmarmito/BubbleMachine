@@ -77,7 +77,7 @@ const TimeInput = ({ value, onChange, error, helperText, label }) => {
       onKeyDown={handleKeyDown}
       error={error}
       helperText={helperText}
-      placeholder="00:00:000"
+      placeholder="MM:SS:sss"
       fullWidth
       inputProps={{
         style: { fontFamily: "monospace" },
