@@ -9,7 +9,7 @@ import PopUpLayer from "../components/table/PopUpLayer";
 import Typography from "@mui/material/Typography";
 import SecondaryHeader from "../components/layout/HomePageHeader";
 import CommentsTable from "../components/table/CommentsTable";
-
+import ConfirmDialog from "./ConfirmDialog";
 export default function HomePage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [vizWidth, setVizWidth] = useState(800);
@@ -21,6 +21,7 @@ export default function HomePage() {
   const [wavesurfer, setWavesurfer] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [hasFile, setHasFile] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   // Move file handling functions here
   const handleFileChange = (e) => {
@@ -34,21 +35,20 @@ export default function HomePage() {
     }
   };
 
-  const handleFileRemove = () => {
-    // Optionally confirm with the user
-    if (window.confirm("Are you sure you want to remove the audio file?")) {
-      setAudioFile(null);
-      setAudioFileName("");
-      setIsAudioLoaded(false);
-      setHasFile(false);
-      setSelectedBubble(null);
-      // Clear wavesurfer instance if needed
-      if (wavesurfer) {
-        wavesurfer.destroy();
-        setWavesurfer(null);
-      }
-      // Clear any other related states
+  const confirmFileRemove = () => {
+    setAudioFile(null);
+    setAudioFileName("");
+    setIsAudioLoaded(false);
+    setHasFile(false);
+    setSelectedBubble(null);
+    if (wavesurfer) {
+      wavesurfer.destroy();
+      setWavesurfer(null);
     }
+  };
+
+  const handleFileRemove = () => {
+    setIsConfirmDialogOpen(true);
   };
 
   return (
@@ -162,6 +162,13 @@ export default function HomePage() {
           </PrimaryContainer>
         </Box>
       </Box>
+      <ConfirmDialog
+        open={isConfirmDialogOpen}
+        onClose={() => setIsConfirmDialogOpen(false)}
+        onConfirm={confirmFileRemove}
+        title="Remove Audio File"
+        message="Are you sure you want to remove the current audio file? This will delete all tables. Export the file first if you wish to save your progress."
+      />
     </div>
   );
 }

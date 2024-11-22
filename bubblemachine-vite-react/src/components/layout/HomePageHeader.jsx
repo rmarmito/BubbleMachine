@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, Button, Stack, Tooltip } from "@mui/material";
 import { Upload, Download, ImportExport, Cancel } from "@mui/icons-material";
 import { useTheme } from "../../styles/context/ThemeContext.jsx";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import useCommentsStore from "../zustand/commentsStore";
+import NotificationDialog from "./NotificationDialog";
 
 const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const { darkMode } = useTheme();
@@ -11,6 +12,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
   const addBubble = useBubbleStore((state) => state.addBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
   const comments = useCommentsStore((state) => state.comments);
+  const [notificationOpen, setNotificationOpen] = useState(false); // Add this state
 
   // Styles
   const containerStyles = {
@@ -188,7 +190,7 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
               });
             });
 
-            alert("Data imported successfully!");
+            setNotificationOpen(true);
           } catch (error) {
             console.error("Import error:", error);
             alert("Error importing data. Please check the file format.");
@@ -292,6 +294,12 @@ const SecondaryHeader = ({ onFileChange, hasFile, handleFileRemove }) => {
                radial-gradient(circle at 30% 80%, rgba(44, 62, 80, 0.03) 0%, transparent 20%)`,
           pointerEvents: "none",
         }}
+      />
+      <NotificationDialog
+        open={notificationOpen}
+        onClose={() => setNotificationOpen(false)}
+        title="Import Successful"
+        message="All bubble and comment data has been imported successfully."
       />
     </Box>
   );
