@@ -43,6 +43,8 @@ const WaveformVis = ({
   setIsAudioLoaded,
   setSelectedBubble,
   audioFile,
+  isFocusMode,
+  setIsFocusMode,
 }) => {
   // Refs
   const waveformRef = useRef(null);
@@ -69,7 +71,19 @@ const WaveformVis = ({
 
     regionsPluginRef.current.clearRegions();
 
-    if (selectedBubble) {
+    if (isFocusMode) {
+      // Add regions for all bubbles
+      bubbles.forEach((bubble) => {
+        regionsPluginRef.current.addRegion({
+          id: bubble.id,
+          start: convertToSeconds(bubble.startTime),
+          end: convertToSeconds(bubble.stopTime),
+          color: colorToRGB(bubble.color),
+          resize: false, // Disable resizing in focus mode
+          drag: false,
+        });
+      });
+    } else if (selectedBubble) {
       regionsPluginRef.current.addRegion({
         id: selectedBubble.id,
         start: convertToSeconds(selectedBubble.startTime),
@@ -79,7 +93,7 @@ const WaveformVis = ({
         drag: false,
       });
     }
-  }, [selectedBubble, wavesurfer]);
+  }, [wavesurfer, bubbles, selectedBubble, isFocusMode]);
 
   // Scroll Handler
   const handleScroll = useCallback(
@@ -155,7 +169,9 @@ const WaveformVis = ({
         : ZOOM_SETTINGS.FULL;
     setZoomLevel(newZoomSetting.level);
     calculateZoom(newZoomSetting);
-  }, [zoomLevel, calculateZoom]);
+
+    setIsFocusMode(newZoomSetting.level === ZOOM_SETTINGS.HALF.level);
+  }, [zoomLevel, calculateZoom, setIsFocusMode]);
 
   // Basic Handlers
   const handlePlayPause = () => wavesurfer?.playPause();

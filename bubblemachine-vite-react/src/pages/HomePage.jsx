@@ -22,6 +22,7 @@ export default function HomePage() {
   const [audioFile, setAudioFile] = useState(null);
   const [hasFile, setHasFile] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   // Move file handling functions here
   const handleFileChange = (e) => {
@@ -97,6 +98,7 @@ export default function HomePage() {
               visibleEndTime={visibleEndTime}
               setSelectedBubble={setSelectedBubble}
               isAudioLoaded={isAudioLoaded}
+              isFocusMode={isFocusMode} // Pass isFocusMode
             />
           </Box>
           {/* Waveform area */}
@@ -113,6 +115,8 @@ export default function HomePage() {
               parentSetWavesurfer={setWavesurfer}
               wavesurfer={wavesurfer}
               audioFile={audioFile} // Pass audioFile as prop
+              isFocusMode={isFocusMode} // Pass isFocusMode
+              setIsFocusMode={setIsFocusMode} // Pass setIsFocusMode
             />
           </Box>
         </Box>

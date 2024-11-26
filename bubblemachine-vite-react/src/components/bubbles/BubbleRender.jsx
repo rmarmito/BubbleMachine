@@ -14,6 +14,7 @@ const BubbleRender = React.memo(
     visibleEndTime = audioDuration,
     setSelectedBubble,
     isAudioLoaded = false,
+    isFocusMode = false,
   }) => {
     const bubbleData = useBubbleStore((state) => state.bubbles);
     const containerRef = useRef(null);
@@ -145,6 +146,24 @@ const BubbleRender = React.memo(
       handleMouseLeave,
       handleClick,
     ]);
+
+    if (isFocusMode) {
+      return (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontSize: "24px",
+            color: "#777",
+            textAlign: "center",
+          }}
+        >
+          Focus Mode
+        </div>
+      );
+    }
 
     return (
       <div
