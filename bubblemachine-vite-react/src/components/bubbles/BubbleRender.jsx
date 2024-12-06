@@ -32,10 +32,7 @@ const BubbleRender = React.memo(
 
     const handleMouseEnter = useCallback((bubble) => {
       setHoveredBubble(bubble.id);
-      // Format hover text using the MM:SS:mmm format
-      const hoverText = `${formatTime(bubble.startTime)} - ${formatTime(
-        bubble.stopTime
-      )}`;
+      const hoverText = `${bubble.bubbleName || ""} `;
       setHoverInfo({
         show: true,
         text: hoverText,
@@ -173,10 +170,12 @@ const BubbleRender = React.memo(
               color: "white",
               padding: "4px 8px",
               borderRadius: "4px",
-              fontSize: "12px",
+              fontSize: "28px",
               pointerEvents: "none",
               zIndex: 1000,
               transform: "translate(-50%, -100%)",
+              whiteSpace: "pre-line",
+              textAlign: "center",
             }}
           >
             {hoverInfo.text}
