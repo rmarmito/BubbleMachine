@@ -313,6 +313,22 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
+
+  useEffect(() => {
+    if (!wavesurfer) return;
+
+    const currentZoomSetting =
+      zoomLevel === ZOOM_SETTINGS.FULL.level
+        ? ZOOM_SETTINGS.FULL
+        : ZOOM_SETTINGS.HALF;
+
+    const intervalId = setInterval(() => {
+      calculateZoom(currentZoomSetting);
+    }, 3000);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
+  }, [wavesurfer, zoomLevel, calculateZoom]);
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
