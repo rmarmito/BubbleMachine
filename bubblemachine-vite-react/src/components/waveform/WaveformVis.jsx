@@ -67,19 +67,12 @@ const WaveformVis = ({
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
-    // Get all existing regions
     const regions = regionsPluginRef.current.getRegions();
 
     if (selectedBubble) {
       const region = regions.find((r) => r.id === selectedBubble.id);
 
-      if (region) {
-        // Update existing region position
-        region.setOptions({
-          start: convertToSeconds(selectedBubble.startTime),
-          end: convertToSeconds(selectedBubble.stopTime),
-        });
-      } else {
+      if (!region) {
         // Only create new region if it doesn't exist
         regionsPluginRef.current.addRegion({
           id: selectedBubble.id,
@@ -90,8 +83,8 @@ const WaveformVis = ({
           drag: false,
         });
       }
+      // Removed the else block that updates existing regions
     } else {
-      // If no bubble is selected, clear regions
       regionsPluginRef.current.clearRegions();
     }
   }, [selectedBubble, wavesurfer]);
@@ -173,19 +166,11 @@ const WaveformVis = ({
         setVisibleEndTime?.(
           formatTime(Math.min(currentDuration, visibleEndSeconds))
         );
-
-        updateRegions();
       } catch (error) {
         console.error("Error during zoom:", error);
       }
     },
-    [
-      wavesurfer,
-      updateRegions,
-      setVisibleStartTime,
-      setVisibleEndTime,
-      duration,
-    ]
+    [wavesurfer, setVisibleStartTime, setVisibleEndTime, duration]
   );
 
   const toggleZoom = useCallback(() => {
@@ -265,7 +250,17 @@ const WaveformVis = ({
         throttle((time) => setCurrentTime(time), 16)
       );
 
+      // Updated region event handlers
       regionsPluginRef.current.on("region-updated", (region) => {
+        // Immediately update bubble state when region is updated
+        updateBubble(region.id, {
+          startTime: formatTime(region.start),
+          stopTime: formatTime(region.end),
+        });
+      });
+
+      regionsPluginRef.current.on("region-update-end", (region) => {
+        // Ensure final position is saved
         updateBubble(region.id, {
           startTime: formatTime(region.start),
           stopTime: formatTime(region.end),
@@ -325,37 +320,6 @@ const WaveformVis = ({
   useEffect(() => {
     if (!wavesurfer) return;
 
-    const handleResize = throttle(() => {
-      if (!waveformRef.current) return;
-
-      const containerWidth = waveformRef.current.clientWidth;
-      setVizWidth?.(containerWidth);
-
-      const currentZoomSetting =
-        zoomLevel === ZOOM_SETTINGS.FULL.level
-          ? ZOOM_SETTINGS.FULL
-          : ZOOM_SETTINGS.HALF;
-
-      calculateZoom(currentZoomSetting);
-    }, 100);
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
-
-  // Play from selected bubble's start time
-  useEffect(() => {
-    if (selectedBubble && wavesurfer) {
-      const startTime = convertToSeconds(selectedBubble.startTime);
-
-      wavesurfer.pause();
-      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
-      wavesurfer.play(startTime);
-    }
-  }, [selectedBubble, wavesurfer]);
-  useEffect(() => {
-    if (!wavesurfer) return;
-
     const currentZoomSetting =
       zoomLevel === ZOOM_SETTINGS.FULL.level
         ? ZOOM_SETTINGS.FULL
@@ -363,12 +327,20 @@ const WaveformVis = ({
 
     const intervalId = setInterval(() => {
       calculateZoom(currentZoomSetting);
-      updateRegions();
     }, 3000);
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when dependencies change
     return () => clearInterval(intervalId);
-  }, [wavesurfer, zoomLevel, calculateZoom, updateRegions]);
+  }, [wavesurfer, zoomLevel, calculateZoom]);
+  // Play from selected bubble's start time
+  useEffect(() => {
+    if (selectedBubble && wavesurfer) {
+      const startTime = convertToSeconds(selectedBubble.startTime);
+      wavesurfer.pause();
+      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+      wavesurfer.play(startTime);
+    }
+  }, [selectedBubble, wavesurfer]);
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
