@@ -26,7 +26,7 @@ import useCommentsStore from "../zustand/commentsStore.jsx";
 const ZOOM_SETTINGS = {
   FULL: {
     level: 1,
-    pixelsPerSecond: 50,
+    pixelsPerSecond: 1,
   },
   HALF: {
     level: 2,
@@ -67,27 +67,26 @@ const WaveformVis = ({
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
-    const regions = regionsPluginRef.current.getRegions();
+    // Get all current regions
+    const currentRegions = regionsPluginRef.current.getRegions();
 
-    if (selectedBubble) {
-      const region = regions.find((r) => r.id === selectedBubble.id);
+    // Clear all existing regions
+    regionsPluginRef.current.clearRegions();
 
-      if (!region) {
-        // Only create new region if it doesn't exist
+    // Create regions for all bubbles in the store that match the selected bubble
+    bubbles.forEach((bubble) => {
+      if (selectedBubble && bubble.id === selectedBubble.id) {
         regionsPluginRef.current.addRegion({
-          id: selectedBubble.id,
-          start: convertToSeconds(selectedBubble.startTime),
-          end: convertToSeconds(selectedBubble.stopTime),
-          color: colorToRGB(selectedBubble.color),
+          id: bubble.id,
+          start: convertToSeconds(bubble.startTime),
+          end: convertToSeconds(bubble.stopTime),
+          color: colorToRGB(bubble.color),
           resize: true,
           drag: false,
         });
       }
-      // Removed the else block that updates existing regions
-    } else {
-      regionsPluginRef.current.clearRegions();
-    }
-  }, [selectedBubble, wavesurfer]);
+    });
+  }, [selectedBubble, bubbles, wavesurfer]);
 
   const TimestampDisplay = ({ currentTime }) => {
     return (
@@ -222,7 +221,7 @@ const WaveformVis = ({
         fillParent: true,
         scrollParent: false,
         renderer: "WebGL2",
-        pixelRatio: 1,
+        pixelRatio: 100,
         normalize: true,
         plugins: [regionsPluginRef.current, hoverPlugin],
       });
@@ -250,7 +249,6 @@ const WaveformVis = ({
         throttle((time) => setCurrentTime(time), 16)
       );
 
-      // Updated region event handlers
       regionsPluginRef.current.on("region-updated", (region) => {
         // Immediately update bubble state when region is updated
         updateBubble(region.id, {
@@ -260,11 +258,14 @@ const WaveformVis = ({
       });
 
       regionsPluginRef.current.on("region-update-end", (region) => {
-        // Ensure final position is saved
-        updateBubble(region.id, {
-          startTime: formatTime(region.start),
-          stopTime: formatTime(region.end),
-        });
+        // Force region to match store values after update
+        const bubble = bubbles.find((b) => b.id === region.id);
+        if (bubble) {
+          region.setOptions({
+            start: convertToSeconds(bubble.startTime),
+            end: convertToSeconds(bubble.stopTime),
+          });
+        }
       });
 
       return ws;
@@ -332,6 +333,7 @@ const WaveformVis = ({
     // Cleanup on unmount or when dependencies change
     return () => clearInterval(intervalId);
   }, [wavesurfer, zoomLevel, calculateZoom]);
+
   // Play from selected bubble's start time
   useEffect(() => {
     if (selectedBubble && wavesurfer) {
