@@ -24,7 +24,7 @@ const SplashScreen = ({ onLoadComplete }) => {
           clearInterval(timer);
           setTimeout(() => {
             setFadeOut(true);
-            setTimeout(onLoadComplete, 1000);
+            setTimeout(onLoadComplete, 500);
           }, 500);
         }
         return newProgress;
@@ -34,7 +34,7 @@ const SplashScreen = ({ onLoadComplete }) => {
     // Loading message rotation
     const messageTimer = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-    }, 2000);
+    }, 750);
 
     return () => {
       clearInterval(timer);

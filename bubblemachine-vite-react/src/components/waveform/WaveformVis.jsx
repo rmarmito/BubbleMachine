@@ -67,19 +67,59 @@ const WaveformVis = ({
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
-    regionsPluginRef.current.clearRegions();
+    // Get all existing regions
+    const regions = regionsPluginRef.current.getRegions();
 
     if (selectedBubble) {
-      regionsPluginRef.current.addRegion({
-        id: selectedBubble.id,
-        start: convertToSeconds(selectedBubble.startTime),
-        end: convertToSeconds(selectedBubble.stopTime),
-        color: colorToRGB(selectedBubble.color),
-        resize: true,
-        drag: false,
-      });
+      const region = regions.find((r) => r.id === selectedBubble.id);
+
+      if (region) {
+        // Update existing region position
+        region.setOptions({
+          start: convertToSeconds(selectedBubble.startTime),
+          end: convertToSeconds(selectedBubble.stopTime),
+        });
+      } else {
+        // Only create new region if it doesn't exist
+        regionsPluginRef.current.addRegion({
+          id: selectedBubble.id,
+          start: convertToSeconds(selectedBubble.startTime),
+          end: convertToSeconds(selectedBubble.stopTime),
+          color: colorToRGB(selectedBubble.color),
+          resize: true,
+          drag: false,
+        });
+      }
+    } else {
+      // If no bubble is selected, clear regions
+      regionsPluginRef.current.clearRegions();
     }
   }, [selectedBubble, wavesurfer]);
+
+  const TimestampDisplay = ({ currentTime }) => {
+    return (
+      <Box
+        sx={{
+          fontFamily: "monospace",
+          fontSize: "1.2rem",
+          padding: "8px 16px",
+          backgroundColor: (theme) =>
+            theme.palette.mode === "dark" ? "#1E1E2E" : "#f5f5f5",
+          borderRadius: "4px",
+          display: "inline-block",
+          minWidth: "120px",
+          textAlign: "center",
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+          color: (theme) =>
+            theme.palette.mode === "dark" ? "#fff" : "inherit",
+        }}
+      >
+        {formatTime(currentTime)}
+      </Box>
+    );
+  };
 
   // Scroll Handler
   const handleScroll = useCallback(
@@ -313,7 +353,6 @@ const WaveformVis = ({
       wavesurfer.play(startTime);
     }
   }, [selectedBubble, wavesurfer]);
-
   useEffect(() => {
     if (!wavesurfer) return;
 
@@ -324,11 +363,13 @@ const WaveformVis = ({
 
     const intervalId = setInterval(() => {
       calculateZoom(currentZoomSetting);
+      updateRegions();
     }, 3000);
 
     // Cleanup on unmount
     return () => clearInterval(intervalId);
-  }, [wavesurfer, zoomLevel, calculateZoom]);
+  }, [wavesurfer, zoomLevel, calculateZoom, updateRegions]);
+
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
@@ -380,6 +421,8 @@ const WaveformVis = ({
             >
               <RestartAlt />
             </IconButton>
+
+            <TimestampDisplay currentTime={currentTime} />
 
             {/* Play/Pause Button */}
             <IconButton
