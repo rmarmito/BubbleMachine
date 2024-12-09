@@ -46,11 +46,11 @@ export const formatTime = (seconds) => {
     return "00:000";
   }
 };
-export function convertToSeconds(time) {
-  if (!time) return 0; // Return 0 if time is undefined or null
+export const convertToSeconds = (time) => {
+  if (!time) return 0;
   const [minutes, seconds, milliseconds] = time.split(":").map(Number);
-  return Math.floor(minutes * 60 + seconds + milliseconds / 1000);
-}
+  return minutes * 60 + seconds + milliseconds / 1000;
+};
 
 export function createID() {
   return (Math.random() + 1).toString(36).substring(7);

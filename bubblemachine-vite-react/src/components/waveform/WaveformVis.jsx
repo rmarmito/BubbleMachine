@@ -26,7 +26,7 @@ import useCommentsStore from "../zustand/commentsStore.jsx";
 const ZOOM_SETTINGS = {
   FULL: {
     level: 1,
-    pixelsPerSecond: 50,
+    pixelsPerSecond: 1,
   },
   HALF: {
     level: 2,
@@ -67,19 +67,51 @@ const WaveformVis = ({
   const updateRegions = useCallback(() => {
     if (!wavesurfer || !regionsPluginRef.current) return;
 
+    // Get all current regions
+    const currentRegions = regionsPluginRef.current.getRegions();
+
+    // Clear all existing regions
     regionsPluginRef.current.clearRegions();
 
-    if (selectedBubble) {
-      regionsPluginRef.current.addRegion({
-        id: selectedBubble.id,
-        start: convertToSeconds(selectedBubble.startTime),
-        end: convertToSeconds(selectedBubble.stopTime),
-        color: colorToRGB(selectedBubble.color),
-        resize: true,
-        drag: false,
-      });
-    }
-  }, [selectedBubble, wavesurfer]);
+    // Create regions for all bubbles in the store that match the selected bubble
+    bubbles.forEach((bubble) => {
+      if (selectedBubble && bubble.id === selectedBubble.id) {
+        regionsPluginRef.current.addRegion({
+          id: bubble.id,
+          start: convertToSeconds(bubble.startTime),
+          end: convertToSeconds(bubble.stopTime),
+          color: colorToRGB(bubble.color),
+          resize: true,
+          drag: false,
+        });
+      }
+    });
+  }, [selectedBubble, bubbles, wavesurfer]);
+
+  const TimestampDisplay = ({ currentTime }) => {
+    return (
+      <Box
+        sx={{
+          fontFamily: "monospace",
+          fontSize: "1.2rem",
+          padding: "8px 16px",
+          backgroundColor: (theme) =>
+            theme.palette.mode === "dark" ? "#1E1E2E" : "#f5f5f5",
+          borderRadius: "4px",
+          display: "inline-block",
+          minWidth: "120px",
+          textAlign: "center",
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "#2A2A3E" : "grey.300",
+          color: (theme) =>
+            theme.palette.mode === "dark" ? "#fff" : "inherit",
+        }}
+      >
+        {formatTime(currentTime)}
+      </Box>
+    );
+  };
 
   // Scroll Handler
   const handleScroll = useCallback(
@@ -133,19 +165,11 @@ const WaveformVis = ({
         setVisibleEndTime?.(
           formatTime(Math.min(currentDuration, visibleEndSeconds))
         );
-
-        updateRegions();
       } catch (error) {
         console.error("Error during zoom:", error);
       }
     },
-    [
-      wavesurfer,
-      updateRegions,
-      setVisibleStartTime,
-      setVisibleEndTime,
-      duration,
-    ]
+    [wavesurfer, setVisibleStartTime, setVisibleEndTime, duration]
   );
 
   const toggleZoom = useCallback(() => {
@@ -197,7 +221,7 @@ const WaveformVis = ({
         fillParent: true,
         scrollParent: false,
         renderer: "WebGL2",
-        pixelRatio: 1,
+        pixelRatio: 100,
         normalize: true,
         plugins: [regionsPluginRef.current, hoverPlugin],
       });
@@ -226,10 +250,22 @@ const WaveformVis = ({
       );
 
       regionsPluginRef.current.on("region-updated", (region) => {
+        // Immediately update bubble state when region is updated
         updateBubble(region.id, {
           startTime: formatTime(region.start),
           stopTime: formatTime(region.end),
         });
+      });
+
+      regionsPluginRef.current.on("region-update-end", (region) => {
+        // Force region to match store values after update
+        const bubble = bubbles.find((b) => b.id === region.id);
+        if (bubble) {
+          region.setOptions({
+            start: convertToSeconds(bubble.startTime),
+            end: convertToSeconds(bubble.stopTime),
+          });
+        }
       });
 
       return ws;
@@ -285,38 +321,6 @@ const WaveformVis = ({
   useEffect(() => {
     if (!wavesurfer) return;
 
-    const handleResize = throttle(() => {
-      if (!waveformRef.current) return;
-
-      const containerWidth = waveformRef.current.clientWidth;
-      setVizWidth?.(containerWidth);
-
-      const currentZoomSetting =
-        zoomLevel === ZOOM_SETTINGS.FULL.level
-          ? ZOOM_SETTINGS.FULL
-          : ZOOM_SETTINGS.HALF;
-
-      calculateZoom(currentZoomSetting);
-    }, 100);
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [wavesurfer, zoomLevel, calculateZoom, setVizWidth]);
-
-  // Play from selected bubble's start time
-  useEffect(() => {
-    if (selectedBubble && wavesurfer) {
-      const startTime = convertToSeconds(selectedBubble.startTime);
-
-      wavesurfer.pause();
-      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
-      wavesurfer.play(startTime);
-    }
-  }, [selectedBubble, wavesurfer]);
-
-  useEffect(() => {
-    if (!wavesurfer) return;
-
     const currentZoomSetting =
       zoomLevel === ZOOM_SETTINGS.FULL.level
         ? ZOOM_SETTINGS.FULL
@@ -326,9 +330,20 @@ const WaveformVis = ({
       calculateZoom(currentZoomSetting);
     }, 3000);
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when dependencies change
     return () => clearInterval(intervalId);
   }, [wavesurfer, zoomLevel, calculateZoom]);
+
+  // Play from selected bubble's start time
+  useEffect(() => {
+    if (selectedBubble && wavesurfer) {
+      const startTime = convertToSeconds(selectedBubble.startTime);
+      wavesurfer.pause();
+      wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+      wavesurfer.play(startTime);
+    }
+  }, [selectedBubble, wavesurfer]);
+
   return (
     <Box sx={{ width: "100%", p: 0 }}>
       {/* Waveform */}
@@ -380,6 +395,8 @@ const WaveformVis = ({
             >
               <RestartAlt />
             </IconButton>
+
+            <TimestampDisplay currentTime={currentTime} />
 
             {/* Play/Pause Button */}
             <IconButton
