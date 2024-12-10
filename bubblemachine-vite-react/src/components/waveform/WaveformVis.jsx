@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import HoverPlugin from "wavesurfer.js/dist/plugins/hover.js";
@@ -39,9 +39,10 @@ const WaveformVis = ({
   setVizWidth,
   setVisibleStartTime,
   setVisibleEndTime,
+  setSelectedBubble,
   selectedBubble,
   setIsAudioLoaded,
-  setSelectedBubble,
+  bubbleTrigger,
   audioFile,
 }) => {
   // Refs
@@ -62,6 +63,7 @@ const WaveformVis = ({
   const updateBubble = useBubbleStore((state) => state.updateBubble);
   const clearBubbles = useBubbleStore((state) => state.clearBubbles);
   const clearComments = useCommentsStore((state) => state.clearComments);
+  const setBubbleTrigger = useBubbleStore((state) => state.setBubbleTrigger);
 
   // Region Management
   const updateRegions = useCallback(() => {
@@ -341,8 +343,9 @@ const WaveformVis = ({
       wavesurfer.pause();
       wavesurfer.seekTo(startTime / wavesurfer.getDuration());
       wavesurfer.play(startTime);
+      console.log("Bubble Trigger", bubbleTrigger);
     }
-  }, [selectedBubble, wavesurfer]);
+  }, [selectedBubble, wavesurfer, bubbleTrigger]);
 
   return (
     <Box sx={{ width: "100%", p: 0 }}>
