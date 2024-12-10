@@ -47,7 +47,7 @@ const useBubbleStore = create((set, get) => ({
     })),
 
   setSelectedBubble: (bubble) => set({ selectedBubble: bubble }),
-
+  
   clearSelection: () => set({ selectedBubble: null }),
 
   // Helper function to get bubbles by layer

@@ -3,7 +3,6 @@ import useBubbleStore from "../zustand/bubbleStore.jsx";
 import {
   convertToMilliseconds,
   addTransparency,
-  formatTime,
 } from "../../helpers/utils.jsx";
 
 const BubbleRender = React.memo(
@@ -13,6 +12,8 @@ const BubbleRender = React.memo(
     visibleStartTime = 0,
     visibleEndTime = audioDuration,
     setSelectedBubble,
+    setBubbleTrigger,
+    bubbleTrigger,
     isAudioLoaded = false,
   }) => {
     const bubbleData = useBubbleStore((state) => state.bubbles);
@@ -62,9 +63,12 @@ const BubbleRender = React.memo(
       (bubble) => {
         if (isAudioLoaded && setSelectedBubble) {
           setSelectedBubble(bubble);
+          setBubbleTrigger(trigger => trigger + 1);
+          console.log("Trigger: ", bubbleTrigger);
+          console.log("Selected Bubble: ", bubble);
         }
       },
-      [isAudioLoaded, setSelectedBubble]
+      [isAudioLoaded, setSelectedBubble, setBubbleTrigger, bubbleTrigger]
     );
 
     const renderedBubbles = useMemo(() => {

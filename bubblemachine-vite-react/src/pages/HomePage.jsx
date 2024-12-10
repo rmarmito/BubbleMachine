@@ -17,6 +17,7 @@ export default function HomePage() {
   const [visibleStartTime, setVisibleStartTime] = useState(0);
   const [visibleEndTime, setVisibleEndTime] = useState(0);
   const [selectedBubble, setSelectedBubble] = useState(null);
+  const [bubbleTrigger, setBubbleTrigger] = useState(0);
   const [isAudioLoaded, setIsAudioLoaded] = useState(false);
   const [wavesurfer, setWavesurfer] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
@@ -95,6 +96,8 @@ export default function HomePage() {
               vizWidth={vizWidth}
               visibleStartTime={visibleStartTime}
               visibleEndTime={visibleEndTime}
+              setBubbleTrigger={setBubbleTrigger}
+              bubbleTrigger={bubbleTrigger}
               setSelectedBubble={setSelectedBubble}
               isAudioLoaded={isAudioLoaded}
             />
@@ -111,6 +114,7 @@ export default function HomePage() {
               setIsAudioLoaded={setIsAudioLoaded}
               setSelectedBubble={setSelectedBubble}
               parentSetWavesurfer={setWavesurfer}
+              bubbleTrigger={bubbleTrigger}
               wavesurfer={wavesurfer}
               audioFile={audioFile} // Pass audioFile as prop
             />
