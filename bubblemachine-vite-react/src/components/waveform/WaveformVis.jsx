@@ -365,7 +365,7 @@ const WaveformVis = ({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 2fr 1fr 1fr",
+          gridTemplateColumns: ".5fr 3fr 1fr 1fr",
           gap: 2,
           mt: 4,
           alignItems: "start",
@@ -466,9 +466,6 @@ const WaveformVis = ({
             </IconButton>
           </Stack>
         </Stack>
-
-        {/* Column 2 - Empty */}
-        <Box />
 
         {/* Column 3 - Comment Display */}
         <Box
