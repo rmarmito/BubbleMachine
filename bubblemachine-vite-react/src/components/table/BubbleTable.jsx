@@ -17,7 +17,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import useBubbleStore from "../zustand/bubbleStore.jsx";
 import { createID, generateRandomColor } from "../../helpers/utils.jsx";
 import ColorPickerCell from "./ColorPickerCell.jsx";
@@ -25,10 +24,8 @@ import ColorPickerCell from "./ColorPickerCell.jsx";
 const formatTimeInput = (value) => {
   if (!value) return "";
 
-  // Remove all non-numeric characters
   const numbers = value.replace(/\D/g, "");
 
-  // Handle different lengths
   if (numbers.length <= 2) {
     return numbers;
   } else if (numbers.length <= 4) {
@@ -210,7 +207,7 @@ const BubbleTable = () => {
       {
         accessorKey: "color",
         header: "Color",
-        size: 100,
+        size: 80,
         Cell: ({ cell, row }) => (
           <ColorPickerCell
             value={cell.getValue() || generateRandomColor()}

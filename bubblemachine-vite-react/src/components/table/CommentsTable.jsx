@@ -3,7 +3,14 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { Box, IconButton, Tooltip, TextField, useTheme } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Tooltip,
+  TextField,
+  useTheme,
+  Typography,
+} from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
@@ -142,7 +149,19 @@ const CommentsTable = () => {
       {
         accessorKey: "text",
         header: "Comment",
-        size: 300,
+        size: 150,
+        Cell: ({ cell }) => (
+          <Typography
+            sx={{
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "250px",
+            }}
+          >
+            {cell.getValue()}
+          </Typography>
+        ),
         Edit: ({ row }) => (
           <TextField
             size="small"
