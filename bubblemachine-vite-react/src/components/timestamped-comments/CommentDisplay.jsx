@@ -100,9 +100,7 @@ const CommentDisplay = ({
       sx={{
         p: 1,
         width: "100%",
-        maxWidth: "700px",
-        minHeight: "150px",
-        height: "flex",
+        flex: 1,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

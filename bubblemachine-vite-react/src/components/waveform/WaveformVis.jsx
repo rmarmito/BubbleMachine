@@ -367,7 +367,8 @@ const WaveformVis = ({
           gridTemplateColumns: "1fr 3fr 1fr 1fr",
           gap: 2,
           mt: 4,
-          alignItems: "start",
+          alignItems: "stretch",
+          minHieght: "200px",
         }}
       >
         <Stack spacing={2} alignItems="left">
@@ -468,8 +469,10 @@ const WaveformVis = ({
         {/*  Comment Display */}
         <Box
           sx={{
-            maxWidth: "700px",
+            maxWidth: "100%",
             width: "100%",
+            height: "100%",
+            display: "flex",
           }}
         >
           <CommentDisplay
