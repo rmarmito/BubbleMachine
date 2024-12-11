@@ -11,14 +11,11 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import useCommentsStore from "../zustand/commentsStore";
 import { formatTime, convertToSeconds } from "../../helpers/utils";
 
-// Add formatTimeInput function to match BubbleTable
 const formatTimeInput = (value) => {
   if (!value) return "";
 
-  // Remove all non-numeric characters
   const numbers = value.replace(/\D/g, "");
 
-  // Handle different lengths
   if (numbers.length <= 2) {
     return numbers;
   } else if (numbers.length <= 4) {
@@ -75,6 +72,8 @@ const TimeInput = ({ value, onChange, error, helperText, label }) => {
     />
   );
 };
+
+const MAX_COMMENT_LENGTH = 2000;
 
 const CommentsTable = () => {
   const theme = useTheme();
@@ -144,31 +143,48 @@ const CommentsTable = () => {
         accessorKey: "text",
         header: "Comment",
         size: 300,
-        muiEditTextFieldProps: {
-          size: "small",
-          multiline: true,
-          minRows: 2,
-          maxRows: 4,
-          error: !!validationErrors?.text,
-          helperText: validationErrors?.text,
-          onKeyDown: (e) => {
-            if (
-              ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
-                e.key
-              )
-            ) {
-              e.stopPropagation();
+        Edit: ({ row }) => (
+          <TextField
+            size="small"
+            multiline
+            minRows={2}
+            maxRows={4}
+            error={!!validationErrors?.text}
+            helperText={
+              validationErrors?.text ||
+              `${
+                MAX_COMMENT_LENGTH - (row.original?.text?.length || 0)
+              } characters remaining`
             }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-              e.preventDefault();
-              const saveButton = document.querySelector('[aria-label="Save"]');
-              if (saveButton) {
-                saveButton.click();
+            defaultValue={row.original.text}
+            onChange={(e) => {
+              row._valuesCache.text = e.target.value;
+            }}
+            inputProps={{
+              maxLength: MAX_COMMENT_LENGTH,
+            }}
+            onKeyDown={(e) => {
+              if (
+                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                  e.key
+                )
+              ) {
+                e.stopPropagation();
               }
-            }
-          },
-        },
+
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                const saveButton = document.querySelector(
+                  '[aria-label="Save"]'
+                );
+                if (saveButton) {
+                  saveButton.click();
+                }
+              }
+            }}
+            fullWidth
+          />
+        ),
       },
     ],
     [validationErrors]
@@ -187,6 +203,8 @@ const CommentsTable = () => {
 
     if (!comment.text?.trim()) {
       errors.text = "Comment is required";
+    } else if (comment.text.length > MAX_COMMENT_LENGTH) {
+      errors.text = `Comment must be ${MAX_COMMENT_LENGTH} characters or less`;
     }
 
     return errors;
@@ -201,7 +219,7 @@ const CommentsTable = () => {
 
     const updatedComment = {
       ...values,
-      text: values.text.trim(),
+      text: values.text.trim().slice(0, MAX_COMMENT_LENGTH),
     };
 
     setValidationErrors({});
