@@ -361,17 +361,16 @@ const WaveformVis = ({
         wavesurfer={wavesurfer}
       />
 
-      {/* 5-Column Layout */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: ".5fr 3fr 1fr 1fr",
+          gridTemplateColumns: "1fr 3fr 1fr 1fr",
           gap: 2,
           mt: 4,
-          alignItems: "start",
+          alignItems: "stretch",
+          minHieght: "200px",
         }}
       >
-        {/* Column 1 - Playback Controls */}
         <Stack spacing={2} alignItems="left">
           {/* Play Controls Group */}
           <Stack direction="row" spacing={2} alignItems="center">
@@ -467,11 +466,13 @@ const WaveformVis = ({
           </Stack>
         </Stack>
 
-        {/* Column 3 - Comment Display */}
+        {/*  Comment Display */}
         <Box
           sx={{
-            maxWidth: "700px",
+            maxWidth: "100%",
             width: "100%",
+            height: "100%",
+            display: "flex",
           }}
         >
           <CommentDisplay
@@ -482,12 +483,12 @@ const WaveformVis = ({
           />
         </Box>
 
-        {/* Column 4 - Comment Creator */}
+        {/*  Comment Creator */}
         <Box>
           <CommentCreator wavesurfer={wavesurfer} disabled={!audioFile} />
         </Box>
 
-        {/* Column 5 - Bubble Creator */}
+        {/* Bubble Creator */}
         <Box>
           <BubbleCreator wavesurfer={wavesurfer} disabled={!audioFile} />
         </Box>

@@ -33,26 +33,21 @@ const CommentDisplay = ({
       }}
     />
   );
-  // Throttled function to update current comment
   const updateCurrentComment = useCallback(
     throttle((time) => {
-      // Find all active comments at the current time
       const activeComments = comments.filter(
         (comment) => time >= comment.startTime && time <= comment.endTime
       );
 
-      // If no active comments, clear the current comment
       if (activeComments.length === 0) {
         setCurrentComment(null);
         return;
       }
 
-      // Sort active comments by start time (latest first)
       const sortedComments = activeComments.sort(
         (a, b) => b.startTime - a.startTime
       );
 
-      // Get the most recent comment (first in sorted array)
       const latestComment = sortedComments[0];
 
       // Only update if we're showing a different comment
@@ -78,14 +73,13 @@ const CommentDisplay = ({
     }
   }, [comments]);
 
-  // Set up wavesurfer event listener
+  // wavesurfer init
   useEffect(() => {
     if (wavesurfer) {
       const onAudioProcess = (time) => {
         updateCurrentComment(time);
       };
 
-      // Also listen for seeking events to update comments immediately when seeking
       const onSeek = (time) => {
         updateCurrentComment(time);
       };
@@ -106,8 +100,7 @@ const CommentDisplay = ({
       sx={{
         p: 1,
         width: "100%",
-        maxWidth: "600px",
-        height: "75px",
+        flex: 1,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
